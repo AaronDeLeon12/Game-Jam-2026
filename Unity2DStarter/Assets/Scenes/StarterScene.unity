@@ -314,7 +314,11 @@ MonoBehaviour:
   glideGravityScale: 1.25
   dashDistance: 3
   dashDisappearTime: 0.12
-  dashCooldown: 0.75
+  dashCooldown: 1.5
+  dashManaCost: 10
+  dashHealthCost: 5
+  doubleJumpManaCost: 5
+  doubleJumpHealthCost: 3
 --- !u!61 &1086756932
 BoxCollider2D:
   m_ObjectHideFlags: 0

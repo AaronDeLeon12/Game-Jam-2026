@@ -13,14 +13,20 @@ public class PlayerMovement2D : MonoBehaviour
     [SerializeField] private float glideGravityScale = 1.25f;
     [SerializeField] private float dashDistance = 3f;
     [SerializeField] private float dashDisappearTime = 0.12f;
-    [SerializeField] private float dashCooldown = 0.75f;
+    [SerializeField] private float dashCooldown = 1.5f;
+    [SerializeField] private float dashManaCost = 10f;
+    [SerializeField] private float dashHealthCost = 5f;
+    [SerializeField] private float doubleJumpManaCost = 5f;
+    [SerializeField] private float doubleJumpHealthCost = 3f;
 
     private Rigidbody2D body;
     private Collider2D playerCollider;
+    private PlayerStats playerStats;
     private float horizontalInput;
     private bool jumpRequested;
     private bool dashRequested;
     private bool isDashing;
+    private bool hasDoubleJumped;
     private float nextDashTime;
     private int facingDirection = 1;
 
@@ -30,6 +36,7 @@ public class PlayerMovement2D : MonoBehaviour
     {
         body = GetComponent<Rigidbody2D>();
         playerCollider = GetComponent<Collider2D>();
+        playerStats = GetComponent<PlayerStats>();
         body.gravityScale = gravityScale;
         body.freezeRotation = true;
     }
@@ -47,12 +54,26 @@ public class PlayerMovement2D : MonoBehaviour
             facingDirection = -1;
         }
 
-        if (Input.GetKeyDown(KeyCode.Space) && IsGrounded())
+        bool isGrounded = IsGrounded();
+
+        if (isGrounded)
+        {
+            hasDoubleJumped = false;
+        }
+
+        if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
         {
             jumpRequested = true;
         }
+        else if (Input.GetKeyDown(KeyCode.Space) && !hasDoubleJumped && TryPayMovementCost(doubleJumpManaCost, doubleJumpHealthCost))
+        {
+            jumpRequested = true;
+            hasDoubleJumped = true;
+        }
 
-        if ((Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.RightShift)) && Time.time >= nextDashTime)
+        if ((Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.RightShift))
+            && Time.time >= nextDashTime
+            && TryPayMovementCost(dashManaCost, dashHealthCost))
         {
             dashRequested = true;
         }
@@ -67,7 +88,7 @@ public class PlayerMovement2D : MonoBehaviour
         }
 
         bool isGrounded = IsGrounded();
-        bool isGliding = !isGrounded && Input.GetKey(KeyCode.Space) && body.linearVelocity.y <= 0f;
+        bool isGliding = hasDoubleJumped && !isGrounded && Input.GetKey(KeyCode.Space) && body.linearVelocity.y <= 0f;
         body.gravityScale = isGliding ? glideGravityScale : gravityScale;
 
         Vector2 velocity = body.linearVelocity;
@@ -88,7 +109,7 @@ public class PlayerMovement2D : MonoBehaviour
         if (dashRequested)
         {
             dashRequested = false;
-            StartCoroutine(DashBackward());
+            StartCoroutine(DashForward());
         }
     }
 
@@ -97,7 +118,17 @@ public class PlayerMovement2D : MonoBehaviour
         return Mathf.Sqrt(2f * Mathf.Abs(Physics2D.gravity.y) * gravityScale * jumpHeight);
     }
 
-    private IEnumerator DashBackward()
+    private bool TryPayMovementCost(float manaCost, float healthCost)
+    {
+        if (playerStats == null)
+        {
+            playerStats = GetComponent<PlayerStats>();
+        }
+
+        return playerStats == null || playerStats.TryPayCombinedCost(manaCost, healthCost);
+    }
+
+    private IEnumerator DashForward()
     {
         isDashing = true;
         nextDashTime = Time.time + dashCooldown;
@@ -113,7 +144,7 @@ public class PlayerMovement2D : MonoBehaviour
 
         yield return new WaitForSeconds(dashDisappearTime);
 
-        transform.position += Vector3.left * facingDirection * dashDistance;
+        transform.position += Vector3.right * facingDirection * dashDistance;
         body.simulated = true;
 
         foreach (SpriteRenderer renderer in renderers)

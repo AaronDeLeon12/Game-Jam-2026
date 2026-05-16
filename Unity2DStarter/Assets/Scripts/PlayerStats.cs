@@ -43,19 +43,42 @@ public class PlayerStats : MonoBehaviour
 
     public bool TryPaySpellCost()
     {
+        return TryPayAbilityCost(spellManaCost, SpellHealthCost);
+    }
+
+    public bool TryPayAbilityCost(float manaCost, float healthCost)
+    {
         if (isDead)
         {
             return false;
         }
 
-        if (mana >= spellManaCost)
+        if (mana >= manaCost)
         {
-            mana -= spellManaCost;
+            mana -= manaCost;
             lastCastTime = Time.time;
             return true;
         }
 
-        float healthCost = SpellHealthCost;
+        health = Mathf.Max(0f, health - healthCost);
+        lastCastTime = Time.time;
+
+        if (health <= 0f)
+        {
+            isDead = true;
+        }
+
+        return true;
+    }
+
+    public bool TryPayCombinedCost(float manaCost, float healthCost)
+    {
+        if (isDead || mana < manaCost)
+        {
+            return false;
+        }
+
+        mana -= manaCost;
         health = Mathf.Max(0f, health - healthCost);
         lastCastTime = Time.time;
 
