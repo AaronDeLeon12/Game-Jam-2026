@@ -162,6 +162,7 @@ public class PlayerCombat : MonoBehaviour
 
         CircleShield shield = shieldObject.AddComponent<CircleShield>();
         shield.Activate(circleShieldHealth, circleShieldDuration);
+        GameAudio.PlaySfx("ShieldSF", transform.position, 0.85f);
     }
 
     private void CastKnifeAttack()
@@ -189,6 +190,7 @@ public class PlayerCombat : MonoBehaviour
         MeleeAttack2D attack = knifeObject.AddComponent<MeleeAttack2D>();
         attack.Launch(gameObject, knifeDamage, knifeResourceValue, 0.15f);
         HitFlash2D.Play(knifeObject, Color.white, 0.06f);
+        GameAudio.PlaySfx("knifeMissSFX", transform.position, 0.8f);
     }
 
     private float GetManaCost(SpellType spellType)

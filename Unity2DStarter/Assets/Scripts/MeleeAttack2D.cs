@@ -35,6 +35,7 @@ public class MeleeAttack2D : MonoBehaviour
 
         hitEnemies.Add(enemy);
         enemy.TakeDamage(damage);
+        GameAudio.PlaySfx("knifeHit", transform.position, 0.9f);
 
         PlayerStats playerStats = owner != null ? owner.GetComponent<PlayerStats>() : null;
         if (playerStats != null)

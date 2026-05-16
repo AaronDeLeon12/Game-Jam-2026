@@ -11,6 +11,7 @@ public class MainMenu : MonoBehaviour
 
     private GameObject mainPanel;
     private SettingsPanel settings;
+    private AudioSource musicSource;
 
     private void Awake()
     {
@@ -18,6 +19,7 @@ public class MainMenu : MonoBehaviour
 
         MenuUI.EnsureEventSystem();
         EnsureCamera();
+        SetupMusic();
         BuildUI();
     }
 
@@ -49,6 +51,21 @@ public class MainMenu : MonoBehaviour
 
         settings = SettingsPanel.Create(canvas.transform, () => ShowSettings(false));
         ShowSettings(false);
+    }
+
+    private void SetupMusic()
+    {
+        AudioClip clip = GameAudio.LoadClip("MainMenu");
+        if (clip == null)
+        {
+            return;
+        }
+
+        musicSource = gameObject.AddComponent<AudioSource>();
+        musicSource.clip = clip;
+        musicSource.loop = true;
+        musicSource.volume = 0.45f;
+        musicSource.Play();
     }
 
     private void ShowSettings(bool show)

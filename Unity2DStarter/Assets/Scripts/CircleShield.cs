@@ -32,6 +32,7 @@ public class CircleShield : MonoBehaviour
     {
         health -= Mathf.Max(0f, damage);
         HitFlash2D.Play(gameObject, Color.white, 0.06f);
+        GameAudio.PlaySfx("ShieldBlockSFX", transform.position, 0.85f);
         UpdateVisual();
 
         if (health <= 0f)
