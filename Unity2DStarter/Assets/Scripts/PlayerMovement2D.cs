@@ -283,6 +283,37 @@ public class PlayerMovement2D : MonoBehaviour
         return true;
     }
 
+    private float GetClampedDashDistance()
+    {
+        Bounds bounds = playerCollider.bounds;
+        Vector2 size = new Vector2(bounds.size.x * 0.9f, bounds.size.y * 0.6f);
+        Vector2 direction = Vector2.right * facingDirection;
+
+        RaycastHit2D[] hits = Physics2D.BoxCastAll(bounds.center, size, 0f, direction, dashDistance, groundLayers);
+
+        float clamped = dashDistance;
+        foreach (RaycastHit2D hit in hits)
+        {
+            if (hit.collider == null || hit.collider == playerCollider)
+            {
+                continue;
+            }
+
+            // Only Walls block a dash. Triggers, one-way platforms and any
+            // ground-flagged solid (Obstacle/Floor) can be dashed through.
+            if (hit.collider.isTrigger
+                || hit.collider.GetComponent<PlatformEffector2D>() != null
+                || hit.collider.GetComponent<GroundSurface2D>() != null)
+            {
+                continue;
+            }
+
+            clamped = Mathf.Min(clamped, hit.distance);
+        }
+
+        return clamped;
+    }
+
     private IEnumerator DashForward()
     {
         isDashing = true;
@@ -297,9 +328,11 @@ public class PlayerMovement2D : MonoBehaviour
         body.linearVelocity = Vector2.zero;
         body.simulated = false;
 
+        float distance = GetClampedDashDistance();
+
         yield return new WaitForSeconds(dashDisappearTime);
 
-        transform.position += Vector3.right * facingDirection * dashDistance;
+        transform.position += Vector3.right * facingDirection * distance;
         body.simulated = true;
 
         foreach (SpriteRenderer renderer in renderers)
