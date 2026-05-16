@@ -9,6 +9,15 @@ public class CameraFollow2D : MonoBehaviour
     public void SetTarget(Transform newTarget)
     {
         target = newTarget;
+        Snap();
+    }
+
+    public void Snap()
+    {
+        if (target != null)
+        {
+            transform.position = target.position + offset;
+        }
     }
 
     private void LateUpdate()
