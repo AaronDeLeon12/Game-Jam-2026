@@ -36,6 +36,7 @@ public class PlayerMovement2D : MonoBehaviour
     private Vector2 standingColliderSize;
     private Vector2 standingColliderOffset;
     private Vector2 standingSpriteSize;
+    private Vector3 standingRendererLocalPosition;
 
     public int FacingDirection => facingDirection;
 
@@ -44,7 +45,7 @@ public class PlayerMovement2D : MonoBehaviour
         body = GetComponent<Rigidbody2D>();
         playerCollider = GetComponent<Collider2D>();
         boxCollider = GetComponent<BoxCollider2D>();
-        playerRenderer = GetComponent<SpriteRenderer>();
+        playerRenderer = GetComponentInChildren<SpriteRenderer>();
         playerStats = GetComponent<PlayerStats>();
         body.gravityScale = gravityScale;
         body.freezeRotation = true;
@@ -59,14 +60,15 @@ public class PlayerMovement2D : MonoBehaviour
         {
             playerRenderer.drawMode = SpriteDrawMode.Sliced;
             standingSpriteSize = playerRenderer.size;
+            standingRendererLocalPosition = playerRenderer.transform.localPosition;
         }
     }
 
     private void Update()
     {
         horizontalInput = Input.GetAxisRaw("Horizontal");
-        isDucking = Input.GetKey(KeyCode.S);
-        ApplyDuckHitbox();
+        bool isGrounded = IsGrounded();
+        UpdateDuckingState(isGrounded);
 
         if (horizontalInput > 0.01f)
         {
@@ -77,18 +79,16 @@ public class PlayerMovement2D : MonoBehaviour
             facingDirection = -1;
         }
 
-        bool isGrounded = IsGrounded();
-
         if (isGrounded)
         {
             hasDoubleJumped = false;
         }
 
-        if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
+        if (Input.GetKeyDown(KeyCode.Space) && isGrounded && !isDucking)
         {
             jumpRequested = true;
         }
-        else if (Input.GetKeyDown(KeyCode.Space) && !hasDoubleJumped && TryPayMovementCost(doubleJumpManaCost))
+        else if (Input.GetKeyDown(KeyCode.Space) && !isGrounded && !hasDoubleJumped && TryPayMovementCost(doubleJumpManaCost))
         {
             jumpRequested = true;
             hasDoubleJumped = true;
@@ -159,6 +159,8 @@ public class PlayerMovement2D : MonoBehaviour
             return;
         }
 
+        RefreshPlayerRenderer();
+
         if (standingColliderSize == Vector2.zero)
         {
             standingColliderSize = boxCollider.size;
@@ -175,6 +177,7 @@ public class PlayerMovement2D : MonoBehaviour
             if (playerRenderer != null)
             {
                 playerRenderer.size = new Vector2(standingSpriteSize.x, standingSpriteSize.y * duckHitboxHeightMultiplier);
+                playerRenderer.transform.localPosition = standingRendererLocalPosition + Vector3.down * heightDifference * 0.5f;
             }
         }
         else
@@ -185,8 +188,75 @@ public class PlayerMovement2D : MonoBehaviour
             if (playerRenderer != null)
             {
                 playerRenderer.size = standingSpriteSize;
+                playerRenderer.transform.localPosition = standingRendererLocalPosition;
             }
         }
+    }
+
+    private void UpdateDuckingState(bool isGrounded)
+    {
+        bool wantsToDuck = Input.GetKey(KeyCode.S);
+        bool canStartDuck = isGrounded && IsNearlyStill();
+
+        if (wantsToDuck && (isDucking || canStartDuck))
+        {
+            isDucking = true;
+        }
+        else if (!wantsToDuck && (!isDucking || CanStandUp()))
+        {
+            isDucking = false;
+        }
+
+        if (!isGrounded)
+        {
+            isDucking = false;
+        }
+
+        ApplyDuckHitbox();
+    }
+
+    private void RefreshPlayerRenderer()
+    {
+        if (playerRenderer != null)
+        {
+            return;
+        }
+
+        playerRenderer = GetComponentInChildren<SpriteRenderer>();
+        if (playerRenderer == null)
+        {
+            return;
+        }
+
+        playerRenderer.drawMode = SpriteDrawMode.Sliced;
+        standingSpriteSize = playerRenderer.size;
+        standingRendererLocalPosition = playerRenderer.transform.localPosition;
+    }
+
+    private bool IsNearlyStill()
+    {
+        return Mathf.Abs(horizontalInput) < 0.01f && Mathf.Abs(body.linearVelocity.x) < 0.05f;
+    }
+
+    private bool CanStandUp()
+    {
+        if (boxCollider == null)
+        {
+            return true;
+        }
+
+        Vector2 center = (Vector2)transform.position + standingColliderOffset;
+        Collider2D[] hits = Physics2D.OverlapBoxAll(center, standingColliderSize * 0.95f, 0f, groundLayers);
+
+        foreach (Collider2D hit in hits)
+        {
+            if (hit != null && hit != playerCollider && !hit.isTrigger)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private IEnumerator DashForward()
@@ -227,7 +297,11 @@ public class PlayerMovement2D : MonoBehaviour
         {
             if (hit != null && hit != playerCollider)
             {
-                return true;
+                GroundSurface2D groundSurface = hit.GetComponent<GroundSurface2D>();
+                if (groundSurface != null && bounds.min.y >= hit.bounds.max.y - 0.12f)
+                {
+                    return true;
+                }
             }
         }
 
