@@ -33,9 +33,11 @@ public class GameHud : MonoBehaviour
             normal = { textColor = Color.white }
         };
 
-        DrawBar(new Rect(50f, 40f, 350f, 48f), playerStats.Health / playerStats.MaxHealth, Color.red);
-        DrawBar(new Rect(50f, 100f, 350f, 48f), playerStats.Mana / playerStats.MaxMana, Color.blue);
-        DrawEquippedSpell(new Rect(430f, 48f, 72f, 72f));
+        float hudAlpha = PauseMenu.IsPaused ? 0.3f : 1f;
+
+        DrawBar(new Rect(50f, 40f, 350f, 48f), playerStats.Health / playerStats.MaxHealth, Color.red, hudAlpha);
+        DrawBar(new Rect(50f, 100f, 350f, 48f), playerStats.Mana / playerStats.MaxMana, Color.blue, hudAlpha);
+        DrawEquippedSpell(new Rect(430f, 48f, 72f, 72f), hudAlpha);
 
         if (playerStats.IsDead)
         {
@@ -51,18 +53,18 @@ public class GameHud : MonoBehaviour
     }
 
 
-    private static void DrawBar(Rect rect, float percent, Color fillColor)
+    private static void DrawBar(Rect rect, float percent, Color fillColor, float alpha)
     {
-        GUI.color = Color.black;
+        GUI.color = new Color(0f, 0f, 0f, alpha);
         GUI.DrawTexture(rect, Texture2D.whiteTexture);
 
-        GUI.color = fillColor;
+        GUI.color = new Color(fillColor.r, fillColor.g, fillColor.b, alpha);
         GUI.DrawTexture(new Rect(rect.x + 2f, rect.y + 2f, (rect.width - 4f) * Mathf.Clamp01(percent), rect.height - 4f), Texture2D.whiteTexture);
 
         GUI.color = Color.white;
     }
 
-    private void DrawEquippedSpell(Rect rect)
+    private void DrawEquippedSpell(Rect rect, float alpha)
     {
         if (playerCombat == null)
         {
@@ -78,10 +80,11 @@ public class GameHud : MonoBehaviour
             return;
         }
 
-        GUI.color = Color.black;
+        GUI.color = new Color(0f, 0f, 0f, alpha);
         GUI.DrawTexture(rect, Texture2D.whiteTexture);
 
-        GUI.color = playerCombat.EquippedSpellColor;
+        Color spellColor = playerCombat.EquippedSpellColor;
+        GUI.color = new Color(spellColor.r, spellColor.g, spellColor.b, alpha);
         SpellType spellType = playerCombat.EquippedSpell;
 
         switch (spellType)

@@ -36,6 +36,11 @@ public class PlayerCombat : MonoBehaviour
 
     private void Update()
     {
+        if (PauseMenu.IsPaused)
+        {
+            return;
+        }
+
         if (stats == null)
         {
             stats = GetComponent<PlayerStats>();
