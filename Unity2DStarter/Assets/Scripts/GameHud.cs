@@ -31,8 +31,8 @@ public class GameHud : MonoBehaviour
             normal = { textColor = Color.white }
         };
 
-        DrawBar(new Rect(50f, 40f, 240f, 48f), playerStats.Health / playerStats.MaxHealth, Color.red);
-        DrawBar(new Rect(50f, 90f, 240f, 48f), playerStats.Mana / playerStats.MaxMana, Color.blue);
+        DrawBar(new Rect(50f, 40f, 350f, 48f), playerStats.Health / playerStats.MaxHealth, Color.red);
+        DrawBar(new Rect(50f, 100f, 350f, 48f), playerStats.Mana / playerStats.MaxMana, Color.blue);
 
         if (playerStats.IsDead)
         {
