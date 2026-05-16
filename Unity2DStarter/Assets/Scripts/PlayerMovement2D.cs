@@ -1,18 +1,27 @@
+using System.Collections;
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody2D))]
 [RequireComponent(typeof(Collider2D))]
 public class PlayerMovement2D : MonoBehaviour
 {
-    [SerializeField] private float moveSpeed = 5f;
-    [SerializeField] private float jumpForce = 10f;
+    [SerializeField] private float moveSpeed = 7f;
+    [SerializeField] private float jumpHeight = 2.5f;
     [SerializeField] private LayerMask groundLayers = ~0;
-    [SerializeField] private float gravityScale = 4.5f;
+    [SerializeField] private float gravityScale = 5f;
+    [SerializeField] private float fallGravityMultiplier = 1.7f;
+    [SerializeField] private float glideGravityScale = 1.25f;
+    [SerializeField] private float dashDistance = 3f;
+    [SerializeField] private float dashDisappearTime = 0.12f;
+    [SerializeField] private float dashCooldown = 0.75f;
 
     private Rigidbody2D body;
     private Collider2D playerCollider;
     private float horizontalInput;
     private bool jumpRequested;
+    private bool dashRequested;
+    private bool isDashing;
+    private float nextDashTime;
     private int facingDirection = 1;
 
     public int FacingDirection => facingDirection;
@@ -42,24 +51,77 @@ public class PlayerMovement2D : MonoBehaviour
         {
             jumpRequested = true;
         }
+
+        if ((Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.RightShift)) && Time.time >= nextDashTime)
+        {
+            dashRequested = true;
+        }
     }
 
     private void FixedUpdate()
     {
+        if (isDashing)
+        {
+            body.linearVelocity = Vector2.zero;
+            return;
+        }
+
+        bool isGrounded = IsGrounded();
+        bool isGliding = !isGrounded && Input.GetKey(KeyCode.Space) && body.linearVelocity.y <= 0f;
+        body.gravityScale = isGliding ? glideGravityScale : gravityScale;
+
         Vector2 velocity = body.linearVelocity;
         velocity.x = horizontalInput * moveSpeed;
 
         if (jumpRequested)
         {
-            velocity.y = jumpForce;
+            velocity.y = CalculateJumpVelocity();
             jumpRequested = false;
         }
-        else if (velocity.y < 0f)
+        else if (!isGliding && velocity.y < 0f)
         {
-            velocity.y += Physics2D.gravity.y * (gravityScale * 0.4f) * Time.fixedDeltaTime;
+            velocity.y += Physics2D.gravity.y * gravityScale * (fallGravityMultiplier - 1f) * Time.fixedDeltaTime;
         }
 
         body.linearVelocity = velocity;
+
+        if (dashRequested)
+        {
+            dashRequested = false;
+            StartCoroutine(DashBackward());
+        }
+    }
+
+    private float CalculateJumpVelocity()
+    {
+        return Mathf.Sqrt(2f * Mathf.Abs(Physics2D.gravity.y) * gravityScale * jumpHeight);
+    }
+
+    private IEnumerator DashBackward()
+    {
+        isDashing = true;
+        nextDashTime = Time.time + dashCooldown;
+
+        SpriteRenderer[] renderers = GetComponentsInChildren<SpriteRenderer>();
+        foreach (SpriteRenderer renderer in renderers)
+        {
+            renderer.enabled = false;
+        }
+
+        body.linearVelocity = Vector2.zero;
+        body.simulated = false;
+
+        yield return new WaitForSeconds(dashDisappearTime);
+
+        transform.position += Vector3.left * facingDirection * dashDistance;
+        body.simulated = true;
+
+        foreach (SpriteRenderer renderer in renderers)
+        {
+            renderer.enabled = true;
+        }
+
+        isDashing = false;
     }
 
     private bool IsGrounded()

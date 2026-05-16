@@ -25,7 +25,7 @@ public class GameTemplateBootstrap : MonoBehaviour
         PlaceholderSprites.MakeSquare(player, new Color(0.95f, 0.95f, 0.95f), 10);
 
         Rigidbody2D body = GetOrAdd<Rigidbody2D>(player);
-        body.gravityScale = 4.5f;
+        body.gravityScale = 5f;
         body.freezeRotation = true;
 
         BoxCollider2D collider = GetOrAdd<BoxCollider2D>(player);
