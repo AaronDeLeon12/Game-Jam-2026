@@ -1,0 +1,37 @@
+* text=auto
+
+# Unity text assets
+*.asmdef text eol=lf
+*.asset text eol=lf
+*.controller text eol=lf
+*.mat text eol=lf
+*.meta text eol=lf
+*.prefab text eol=lf
+*.scene text eol=lf
+*.unity text eol=lf
+*.uxml text eol=lf
+*.uss text eol=lf
+
+# Source and project files
+*.cs text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.ps1 text eol=crlf
+*.txt text eol=lf
+
+# Binary assets
+*.anim binary
+*.bmp binary
+*.dll binary
+*.fbx binary
+*.gif binary
+*.jpg binary
+*.jpeg binary
+*.mp3 binary
+*.mp4 binary
+*.ogg binary
+*.png binary
+*.psd binary
+*.tga binary
+*.wav binary
+*.zip binary
