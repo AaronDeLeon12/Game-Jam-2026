@@ -69,6 +69,12 @@ public class PlayerMovement2D : MonoBehaviour
         horizontalInput = Input.GetAxisRaw("Horizontal");
         bool isGrounded = IsGrounded();
         UpdateDuckingState(isGrounded);
+        bool isBlocking = playerStats != null && playerStats.IsBlocking;
+
+        if (isBlocking)
+        {
+            horizontalInput = 0f;
+        }
 
         if (horizontalInput > 0.01f)
         {
@@ -84,11 +90,11 @@ public class PlayerMovement2D : MonoBehaviour
             hasDoubleJumped = false;
         }
 
-        if (Input.GetKeyDown(KeyCode.Space) && isGrounded && !isDucking)
+        if (JumpWasPressed() && isGrounded && !isDucking && !isBlocking)
         {
             jumpRequested = true;
         }
-        else if (Input.GetKeyDown(KeyCode.Space) && !isGrounded && !hasDoubleJumped && TryPayMovementCost(doubleJumpManaCost))
+        else if (JumpWasPressed() && !isGrounded && !hasDoubleJumped && !isBlocking && TryPayMovementCost(doubleJumpManaCost))
         {
             jumpRequested = true;
             hasDoubleJumped = true;
@@ -96,6 +102,7 @@ public class PlayerMovement2D : MonoBehaviour
 
         if ((Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.RightShift))
             && Time.time >= nextDashTime
+            && !isBlocking
             && TryPayMovementCost(dashManaCost))
         {
             dashRequested = true;
@@ -111,12 +118,13 @@ public class PlayerMovement2D : MonoBehaviour
         }
 
         bool isGrounded = IsGrounded();
-        bool isGliding = hasDoubleJumped && !isGrounded && Input.GetKey(KeyCode.Space) && body.linearVelocity.y <= 0f;
+        bool isBlocking = playerStats != null && playerStats.IsBlocking;
+        bool isGliding = hasDoubleJumped && !isGrounded && JumpIsHeld() && !isBlocking && body.linearVelocity.y <= 0f;
         body.gravityScale = isGliding ? glideGravityScale : gravityScale;
         float currentMoveSpeed = isDucking ? moveSpeed * duckSpeedMultiplier : moveSpeed;
 
         Vector2 velocity = body.linearVelocity;
-        velocity.x = horizontalInput * currentMoveSpeed;
+        velocity.x = isBlocking ? 0f : horizontalInput * currentMoveSpeed;
 
         if (jumpRequested)
         {
@@ -140,6 +148,16 @@ public class PlayerMovement2D : MonoBehaviour
     private float CalculateJumpVelocity()
     {
         return Mathf.Sqrt(2f * Mathf.Abs(Physics2D.gravity.y) * gravityScale * jumpHeight);
+    }
+
+    private static bool JumpWasPressed()
+    {
+        return Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.W);
+    }
+
+    private static bool JumpIsHeld()
+    {
+        return Input.GetKey(KeyCode.Space) || Input.GetKey(KeyCode.W);
     }
 
     private bool TryPayMovementCost(float manaCost)

@@ -29,9 +29,25 @@ public class EnemyProjectile : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D other)
     {
+        CircleShield shield = other.GetComponent<CircleShield>();
+        if (shield != null)
+        {
+            shield.TakeDamage(damage);
+            Destroy(gameObject);
+            return;
+        }
+
         PlayerStats playerStats = other.GetComponent<PlayerStats>();
         if (playerStats == null)
         {
+            return;
+        }
+
+        CircleShield playerShield = playerStats.GetComponentInChildren<CircleShield>();
+        if (playerShield != null)
+        {
+            playerShield.TakeDamage(damage);
+            Destroy(gameObject);
             return;
         }
 
