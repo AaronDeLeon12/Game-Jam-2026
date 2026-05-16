@@ -92,6 +92,9 @@ public class GameHud : MonoBehaviour
             case SpellType.Circle:
                 DrawCircle(rect);
                 break;
+            case SpellType.Knife:
+                DrawKnife(rect);
+                break;
             default:
                 GUI.DrawTexture(new Rect(rect.x + 18f, rect.y + 18f, 36f, 36f), Texture2D.whiteTexture);
                 break;
@@ -118,5 +121,15 @@ public class GameHud : MonoBehaviour
             float halfWidth = Mathf.Sqrt(Mathf.Max(0f, 18f * 18f - row * row));
             GUI.DrawTexture(new Rect(center.x - halfWidth, center.y + row, halfWidth * 2f, 1f), Texture2D.whiteTexture);
         }
+    }
+
+    private static void DrawKnife(Rect rect)
+    {
+        for (int i = 0; i < 34; i++)
+        {
+            GUI.DrawTexture(new Rect(rect.x + 18f + i, rect.y + 50f - i, 4f, 4f), Texture2D.whiteTexture);
+        }
+
+        GUI.DrawTexture(new Rect(rect.x + 12f, rect.y + 50f, 16f, 8f), Texture2D.whiteTexture);
     }
 }

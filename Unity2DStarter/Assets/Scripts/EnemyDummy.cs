@@ -40,6 +40,8 @@ public class EnemyDummy : MonoBehaviour
             spriteRenderer.color = Color.Lerp(new Color(0.35f, 0.1f, 0.1f), new Color(0.2f, 0.9f, 0.25f), healthPercent);
         }
 
+        HitFlash2D.Play(gameObject, Color.white, 0.06f);
+
         if (health <= 0f)
         {
             StartCoroutine(RespawnAfterDelay());

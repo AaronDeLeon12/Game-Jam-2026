@@ -39,6 +39,7 @@ public class PlayerMovement2D : MonoBehaviour
     private Vector3 standingRendererLocalPosition;
 
     public int FacingDirection => facingDirection;
+    public bool IsDucking => isDucking;
 
     private void Awake()
     {

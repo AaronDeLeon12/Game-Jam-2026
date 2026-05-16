@@ -2,8 +2,8 @@ using UnityEngine;
 
 public class CircleShield : MonoBehaviour
 {
-    private float maxHealth = 50f;
-    private float health = 50f;
+    private float maxHealth = 20f;
+    private float health = 20f;
     private float expireTime;
     private SpriteRenderer spriteRenderer;
 
@@ -31,6 +31,7 @@ public class CircleShield : MonoBehaviour
     public void TakeDamage(float damage)
     {
         health -= Mathf.Max(0f, damage);
+        HitFlash2D.Play(gameObject, Color.white, 0.06f);
         UpdateVisual();
 
         if (health <= 0f)
@@ -52,7 +53,7 @@ public class CircleShield : MonoBehaviour
         }
 
         Color color = spriteRenderer.color;
-        color.a = Mathf.Lerp(0.12f, 0.4f, Mathf.Clamp01(health / maxHealth));
+        color.a = Mathf.Lerp(0.12f, 0.2f, Mathf.Clamp01(health / maxHealth));
         spriteRenderer.color = color;
     }
 }

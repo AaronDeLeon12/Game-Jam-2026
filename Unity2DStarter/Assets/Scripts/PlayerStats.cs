@@ -8,12 +8,18 @@ public class PlayerStats : MonoBehaviour
     [SerializeField] private float manaRegenDelay = 3f;
     [SerializeField] private float manaRegenPerSecond = 20f;
     [SerializeField] private float healthValueInMana = 2f;
+    [SerializeField] private float parryWindowDuration = 0.2f;
+    [SerializeField] private float parryCooldown = 1f;
+    [SerializeField] private float parryHealthRestore = 10f;
 
     private float health;
     private float mana;
     private float manaRegenBlockedUntil;
+    private float parryWindowEndTime;
+    private float nextParryReadyTime;
     private bool isDead;
     private bool isBlocking;
+    private bool wasBlocking;
 
     public float Health => health;
     public float Mana => mana;
@@ -40,6 +46,13 @@ public class PlayerStats : MonoBehaviour
         }
 
         isBlocking = Input.GetMouseButton(1);
+        if (isBlocking && !wasBlocking && Time.time >= nextParryReadyTime)
+        {
+            parryWindowEndTime = Time.time + parryWindowDuration;
+            nextParryReadyTime = Time.time + parryCooldown;
+        }
+
+        wasBlocking = isBlocking;
 
         if (Time.time >= manaRegenBlockedUntil && mana < maxMana)
         {
@@ -61,6 +74,13 @@ public class PlayerStats : MonoBehaviour
 
         float finalDamage = IsBlocking ? damage * 0.5f : damage;
         health = Mathf.Max(0f, health - Mathf.Max(0f, finalDamage));
+        HitFlash2D.Play(gameObject, IsBlocking ? new Color(0.4f, 0.75f, 1f) : new Color(1f, 0.2f, 0.15f));
+
+        if (IsBlocking && Time.time <= parryWindowEndTime)
+        {
+            RestoreHealth(parryHealthRestore);
+            parryWindowEndTime = 0f;
+        }
 
         if (health <= 0f)
         {
@@ -94,6 +114,33 @@ public class PlayerStats : MonoBehaviour
         }
 
         return true;
+    }
+
+    public void RestoreResourceValue(float manaValue)
+    {
+        if (isDead)
+        {
+            return;
+        }
+
+        float manaRestored = Mathf.Min(maxMana - mana, Mathf.Max(0f, manaValue));
+        mana += manaRestored;
+
+        float leftoverValue = manaValue - manaRestored;
+        if (leftoverValue > 0f)
+        {
+            RestoreHealth(ConvertManaDebtToHealth(leftoverValue));
+        }
+    }
+
+    public void RestoreHealth(float amount)
+    {
+        if (isDead)
+        {
+            return;
+        }
+
+        health = Mathf.Min(maxHealth, health + Mathf.Max(0f, amount));
     }
 
     public float ConvertManaDebtToHealth(float manaDebt)
