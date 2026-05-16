@@ -19,6 +19,7 @@ public class PlayerMovement2D : MonoBehaviour
     [SerializeField] private float movementManaRegenDelay = 0.3f;
     [SerializeField] private float duckSpeedMultiplier = 0.5f;
     [SerializeField] private float duckHitboxHeightMultiplier = 0.5f;
+    [SerializeField] private float platformDropDuration = 0.35f;
 
     private Rigidbody2D body;
     private Collider2D playerCollider;
@@ -71,6 +72,11 @@ public class PlayerMovement2D : MonoBehaviour
         bool isGrounded = IsGrounded();
         UpdateDuckingState(isGrounded);
         bool isBlocking = playerStats != null && playerStats.IsBlocking;
+
+        if (Input.GetKeyDown(KeyCode.S) && isGrounded)
+        {
+            TryDropThroughPlatform();
+        }
 
         if (isBlocking)
         {
@@ -303,6 +309,47 @@ public class PlayerMovement2D : MonoBehaviour
         }
 
         isDashing = false;
+    }
+
+    private void TryDropThroughPlatform()
+    {
+        Bounds bounds = playerCollider.bounds;
+        Vector2 origin = new Vector2(bounds.center.x, bounds.min.y - 0.04f);
+        Vector2 size = new Vector2(bounds.size.x * 0.85f, 0.08f);
+        Collider2D[] hits = Physics2D.OverlapBoxAll(origin, size, 0f, groundLayers);
+
+        foreach (Collider2D hit in hits)
+        {
+            if (hit == null || hit == playerCollider)
+            {
+                continue;
+            }
+
+            if (hit.GetComponent<PlatformEffector2D>() != null)
+            {
+                StartCoroutine(DropThrough(hit));
+            }
+        }
+    }
+
+    private IEnumerator DropThrough(Collider2D platform)
+    {
+        Physics2D.IgnoreCollision(playerCollider, platform, true);
+
+        yield return new WaitForSeconds(platformDropDuration);
+
+        float timeout = Time.time + 1f;
+        while (platform != null
+            && Time.time < timeout
+            && playerCollider.bounds.min.y < platform.bounds.max.y)
+        {
+            yield return null;
+        }
+
+        if (platform != null)
+        {
+            Physics2D.IgnoreCollision(playerCollider, platform, false);
+        }
     }
 
     private bool IsGrounded()

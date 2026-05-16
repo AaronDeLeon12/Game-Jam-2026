@@ -29,13 +29,13 @@ public class SpellProjectile : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        EnemyDummy dummy = other.GetComponent<EnemyDummy>();
-        if (dummy == null)
+        IDamageable damageable = other.GetComponent<IDamageable>();
+        if (damageable == null)
         {
             return;
         }
 
-        dummy.TakeDamage(damage);
+        damageable.TakeDamage(damage);
         Destroy(gameObject);
     }
 }
