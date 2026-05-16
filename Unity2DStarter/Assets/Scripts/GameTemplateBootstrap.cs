@@ -81,16 +81,18 @@ public class GameTemplateBootstrap : MonoBehaviour
 
         dummy.transform.position = new Vector3(6f, -1.75f, 0f);
         dummy.transform.localScale = Vector3.one;
-        PlaceholderSprites.MakeSquare(dummy, new Color(0.2f, 0.9f, 0.25f), 10);
+        PlaceholderSprites.MakeSquare(dummy, new Color(0.85f, 0.25f, 0.2f), 10);
 
         BoxCollider2D collider = GetOrAdd<BoxCollider2D>(dummy);
-        collider.isTrigger = true;
+        collider.isTrigger = false;
         collider.size = Vector2.one;
 
-        if (dummy.GetComponent<EnemyDummy>() == null)
-        {
-            dummy.AddComponent<EnemyDummy>();
-        }
+        Rigidbody2D body = GetOrAdd<Rigidbody2D>(dummy);
+        body.gravityScale = 5f;
+        body.freezeRotation = true;
+
+        GetOrAdd<HealthBar>(dummy);
+        GetOrAdd<Enemy>(dummy);
     }
 
     private static void SetupCamera(Transform player)

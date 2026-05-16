@@ -75,6 +75,16 @@ public class PlayerStats : MonoBehaviour
         return true;
     }
 
+    public void TakeDamage(float damage)
+    {
+        if (isDead) return;
+
+        health = Mathf.Max(0f, health - damage);
+
+        if (health <= 0f)
+            isDead = true;
+    }
+
     public float ConvertManaDebtToHealth(float manaDebt)
     {
         return Mathf.Ceil(Mathf.Max(0f, manaDebt) / healthValueInMana);

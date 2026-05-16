@@ -1,7 +1,7 @@
 using System.Collections;
 using UnityEngine;
 
-public class EnemyDummy : MonoBehaviour
+public class EnemyDummy : MonoBehaviour, IDamageable
 {
     [SerializeField] private float maxHealth = 3f;
     [SerializeField] private float respawnDelay = 3f;
