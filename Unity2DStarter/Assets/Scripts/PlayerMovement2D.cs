@@ -15,9 +15,8 @@ public class PlayerMovement2D : MonoBehaviour
     [SerializeField] private float dashDisappearTime = 0.12f;
     [SerializeField] private float dashCooldown = 1.5f;
     [SerializeField] private float dashManaCost = 10f;
-    [SerializeField] private float dashHealthCost = 5f;
     [SerializeField] private float doubleJumpManaCost = 5f;
-    [SerializeField] private float doubleJumpHealthCost = 3f;
+    [SerializeField] private float movementManaRegenDelay = 0.3f;
 
     private Rigidbody2D body;
     private Collider2D playerCollider;
@@ -65,7 +64,7 @@ public class PlayerMovement2D : MonoBehaviour
         {
             jumpRequested = true;
         }
-        else if (Input.GetKeyDown(KeyCode.Space) && !hasDoubleJumped && TryPayMovementCost(doubleJumpManaCost, doubleJumpHealthCost))
+        else if (Input.GetKeyDown(KeyCode.Space) && !hasDoubleJumped && TryPayMovementCost(doubleJumpManaCost))
         {
             jumpRequested = true;
             hasDoubleJumped = true;
@@ -73,7 +72,7 @@ public class PlayerMovement2D : MonoBehaviour
 
         if ((Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.RightShift))
             && Time.time >= nextDashTime
-            && TryPayMovementCost(dashManaCost, dashHealthCost))
+            && TryPayMovementCost(dashManaCost))
         {
             dashRequested = true;
         }
@@ -118,14 +117,14 @@ public class PlayerMovement2D : MonoBehaviour
         return Mathf.Sqrt(2f * Mathf.Abs(Physics2D.gravity.y) * gravityScale * jumpHeight);
     }
 
-    private bool TryPayMovementCost(float manaCost, float healthCost)
+    private bool TryPayMovementCost(float manaCost)
     {
         if (playerStats == null)
         {
             playerStats = GetComponent<PlayerStats>();
         }
 
-        return playerStats == null || playerStats.TryPayAbilityCost(manaCost, healthCost);
+        return playerStats == null || playerStats.TryPayCost(manaCost, movementManaRegenDelay);
     }
 
     private IEnumerator DashForward()

@@ -7,6 +7,7 @@ public class PlayerStats : MonoBehaviour
     [SerializeField] private float spellManaCost = 20f;
     [SerializeField] private float manaRegenDelay = 5f;
     [SerializeField] private float manaRegenPerSecond = 25f;
+    [SerializeField] private float healthValueInMana = 2f;
 
     private float health;
     private float mana;
@@ -18,7 +19,7 @@ public class PlayerStats : MonoBehaviour
     public float MaxHealth => maxHealth;
     public float MaxMana => maxMana;
     public float SpellManaCost => spellManaCost;
-    public float SpellHealthCost => spellManaCost * 0.5f;
+    public float SpellHealthCost => ConvertManaDebtToHealth(spellManaCost);
     public float ManaRegenDelayRemaining => Mathf.Max(0f, manaRegenDelay - (Time.time - lastCastTime));
     public bool IsDead => isDead;
 
@@ -43,25 +44,28 @@ public class PlayerStats : MonoBehaviour
 
     public bool TryPaySpellCost()
     {
-        return TryPayAbilityCost(spellManaCost, SpellHealthCost);
+        return TryPayCost(spellManaCost, manaRegenDelay);
     }
 
-    public bool TryPayAbilityCost(float manaCost, float healthCost)
+    public bool TryPayCost(float manaCost, float regenDelay)
     {
         if (isDead)
         {
             return false;
         }
 
-        if (mana >= manaCost)
+        float manaPaid = Mathf.Min(mana, manaCost);
+        float remainingManaCost = manaCost - manaPaid;
+        float healthCost = ConvertManaDebtToHealth(remainingManaCost);
+
+        mana -= manaPaid;
+
+        if (healthCost > 0f)
         {
-            mana -= manaCost;
-            lastCastTime = Time.time;
-            return true;
+            health = Mathf.Max(0f, health - healthCost);
         }
 
-        health = Mathf.Max(0f, health - healthCost);
-        lastCastTime = Time.time;
+        lastCastTime = Time.time - Mathf.Max(0f, manaRegenDelay - regenDelay);
 
         if (health <= 0f)
         {
@@ -71,4 +75,8 @@ public class PlayerStats : MonoBehaviour
         return true;
     }
 
+    public float ConvertManaDebtToHealth(float manaDebt)
+    {
+        return Mathf.Ceil(Mathf.Max(0f, manaDebt) / healthValueInMana);
+    }
 }
