@@ -39,6 +39,11 @@ public class PlayerStats : MonoBehaviour
 
     private void Update()
     {
+        if (PauseMenu.IsPaused)
+        {
+            return;
+        }
+
         if (isDead)
         {
             isBlocking = false;

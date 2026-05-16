@@ -68,6 +68,11 @@ public class PlayerMovement2D : MonoBehaviour
 
     private void Update()
     {
+        if (PauseMenu.IsPaused)
+        {
+            return;
+        }
+
         horizontalInput = Input.GetAxisRaw("Horizontal");
         bool isGrounded = IsGrounded();
         UpdateDuckingState(isGrounded);
