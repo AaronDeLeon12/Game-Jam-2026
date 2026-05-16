@@ -5,13 +5,15 @@ public class SpellProjectile : MonoBehaviour
     private int direction = 1;
     private float speed = 12f;
     private float range = 3f;
+    private float damage = 1f;
     private Vector3 startPosition;
 
-    public void Launch(int launchDirection, float launchSpeed, float launchRange)
+    public void Launch(int launchDirection, float launchSpeed, float launchRange, float launchDamage)
     {
         direction = launchDirection >= 0 ? 1 : -1;
         speed = launchSpeed;
         range = launchRange;
+        damage = launchDamage;
         startPosition = transform.position;
     }
 
@@ -33,7 +35,7 @@ public class SpellProjectile : MonoBehaviour
             return;
         }
 
-        dummy.TakeHit();
+        dummy.TakeDamage(damage);
         Destroy(gameObject);
     }
 }
