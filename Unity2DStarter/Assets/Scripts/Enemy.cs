@@ -62,6 +62,11 @@ public class Enemy : MonoBehaviour, IDamageable
 
     private void Update()
     {
+        if (PauseMenu.IsPaused)
+        {
+            return;
+        }
+
         if (player == null)
         {
             Patrol();

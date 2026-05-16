@@ -17,6 +17,11 @@ public class EnemyShooter : MonoBehaviour
 
     private void Update()
     {
+        if (PauseMenu.IsPaused)
+        {
+            return;
+        }
+
         if (health != null && !health.IsAlive)
         {
             return;

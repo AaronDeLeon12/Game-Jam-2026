@@ -25,6 +25,39 @@ public class SystemsBootstrap : MonoBehaviour
         GameObject systems = new GameObject("Systems");
         systems.AddComponent<SystemsBootstrap>();
         systems.AddComponent<LevelManager>();
+        systems.AddComponent<PauseMenu>();
+    }
+
+    /// <summary>
+    /// Destroys all persistent systems (player, camera, HUD and the Systems
+    /// object itself). Call before returning to the main menu so nothing
+    /// bleeds into it or duplicates on the next play session.
+    /// </summary>
+    public static void Teardown()
+    {
+        if (Instance == null)
+        {
+            return;
+        }
+
+        if (Instance.Player != null)
+        {
+            Destroy(Instance.Player);
+        }
+
+        if (Instance.GameCamera != null)
+        {
+            Destroy(Instance.GameCamera.gameObject);
+        }
+
+        if (Instance.Hud != null)
+        {
+            Destroy(Instance.Hud);
+        }
+
+        GameObject systemsObject = Instance.gameObject;
+        Instance = null;
+        Destroy(systemsObject);
     }
 
     private void Awake()
