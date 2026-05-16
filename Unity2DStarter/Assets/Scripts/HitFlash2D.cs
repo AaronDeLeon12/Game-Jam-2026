@@ -4,6 +4,8 @@ using UnityEngine;
 public class HitFlash2D : MonoBehaviour
 {
     private Coroutine activeFlash;
+    private SpriteRenderer[] flashingRenderers;
+    private Color[] originalColors;
 
     public static void Play(GameObject owner, Color flashColor, float duration = 0.08f)
     {
@@ -26,6 +28,7 @@ public class HitFlash2D : MonoBehaviour
         if (activeFlash != null)
         {
             StopCoroutine(activeFlash);
+            RestoreOriginalColors();
         }
 
         activeFlash = StartCoroutine(FlashRoutine(flashColor, duration));
@@ -33,25 +36,37 @@ public class HitFlash2D : MonoBehaviour
 
     private IEnumerator FlashRoutine(Color flashColor, float duration)
     {
-        SpriteRenderer[] renderers = GetComponentsInChildren<SpriteRenderer>();
-        Color[] originalColors = new Color[renderers.Length];
+        flashingRenderers = GetComponentsInChildren<SpriteRenderer>();
+        originalColors = new Color[flashingRenderers.Length];
 
-        for (int i = 0; i < renderers.Length; i++)
+        for (int i = 0; i < flashingRenderers.Length; i++)
         {
-            originalColors[i] = renderers[i].color;
-            renderers[i].color = flashColor;
+            originalColors[i] = flashingRenderers[i].color;
+            flashingRenderers[i].color = flashColor;
         }
 
         yield return new WaitForSeconds(duration);
 
-        for (int i = 0; i < renderers.Length; i++)
+        RestoreOriginalColors();
+        activeFlash = null;
+    }
+
+    private void RestoreOriginalColors()
+    {
+        if (flashingRenderers == null || originalColors == null)
         {
-            if (renderers[i] != null)
+            return;
+        }
+
+        for (int i = 0; i < flashingRenderers.Length; i++)
+        {
+            if (flashingRenderers[i] != null && i < originalColors.Length)
             {
-                renderers[i].color = originalColors[i];
+                flashingRenderers[i].color = originalColors[i];
             }
         }
 
-        activeFlash = null;
+        flashingRenderers = null;
+        originalColors = null;
     }
 }

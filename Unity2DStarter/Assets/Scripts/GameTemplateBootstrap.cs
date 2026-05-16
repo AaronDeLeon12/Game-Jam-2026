@@ -92,10 +92,13 @@ public class GameTemplateBootstrap : MonoBehaviour
         collider.isTrigger = true;
         collider.size = Vector2.one;
 
-        if (shooter.GetComponent<EnemyDummy>() == null)
+        EnemyDummy shooterHealth = shooter.GetComponent<EnemyDummy>();
+        if (shooterHealth == null)
         {
-            shooter.AddComponent<EnemyDummy>();
+            shooterHealth = shooter.AddComponent<EnemyDummy>();
         }
+
+        shooterHealth.ConfigureHealth(100f);
 
         if (shooter.GetComponent<EnemyShooter>() == null)
         {

@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class EnemyDummy : MonoBehaviour, IDamageable
 {
-    [SerializeField] private float maxHealth = 5f;
+    [SerializeField] private float maxHealth = 100f;
     [SerializeField] private float respawnDelay = 3f;
 
     private float health;
@@ -21,6 +21,13 @@ public class EnemyDummy : MonoBehaviour, IDamageable
     public void TakeHit()
     {
         TakeDamage(1f);
+    }
+
+    public void ConfigureHealth(float newMaxHealth)
+    {
+        maxHealth = Mathf.Max(1f, newMaxHealth);
+        health = maxHealth;
+        SetVisible(true);
     }
 
     public void TakeDamage(float damage)
