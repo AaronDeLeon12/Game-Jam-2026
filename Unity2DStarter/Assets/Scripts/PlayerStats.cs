@@ -71,22 +71,4 @@ public class PlayerStats : MonoBehaviour
         return true;
     }
 
-    public bool TryPayCombinedCost(float manaCost, float healthCost)
-    {
-        if (isDead || mana < manaCost)
-        {
-            return false;
-        }
-
-        mana -= manaCost;
-        health = Mathf.Max(0f, health - healthCost);
-        lastCastTime = Time.time;
-
-        if (health <= 0f)
-        {
-            isDead = true;
-        }
-
-        return true;
-    }
 }

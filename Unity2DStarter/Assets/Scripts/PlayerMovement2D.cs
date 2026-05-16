@@ -125,7 +125,7 @@ public class PlayerMovement2D : MonoBehaviour
             playerStats = GetComponent<PlayerStats>();
         }
 
-        return playerStats == null || playerStats.TryPayCombinedCost(manaCost, healthCost);
+        return playerStats == null || playerStats.TryPayAbilityCost(manaCost, healthCost);
     }
 
     private IEnumerator DashForward()
