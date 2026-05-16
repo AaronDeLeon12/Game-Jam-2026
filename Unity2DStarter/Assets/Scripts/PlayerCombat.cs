@@ -111,7 +111,7 @@ public class PlayerCombat : MonoBehaviour
         GameObject shieldObject = new GameObject("Circle Shield");
         shieldObject.transform.SetParent(transform, false);
         shieldObject.transform.localPosition = Vector3.zero;
-        shieldObject.transform.localScale = new Vector3(2.4f, 2.4f, 1f);
+        shieldObject.transform.localScale = new Vector3(4.8f, 4.8f, 1f);
 
         SpriteRenderer renderer = shieldObject.AddComponent<SpriteRenderer>();
         renderer.sprite = ShapeSprites.Circle;
