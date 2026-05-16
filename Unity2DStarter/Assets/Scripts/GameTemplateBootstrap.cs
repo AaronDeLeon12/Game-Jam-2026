@@ -13,6 +13,8 @@ public class GameTemplateBootstrap : MonoBehaviour
         SetupPlayer(player);
         SetupFloor();
         SetupDummy();
+        SetupMovementTestArea();
+        SetupShooter();
         SetupCamera(player.transform);
         SetupHud(player.GetComponent<PlayerStats>());
         RemoveOldPlatforms();
@@ -76,9 +78,15 @@ public class GameTemplateBootstrap : MonoBehaviour
         GameObject dummy = GameObject.Find("Enemy Dummy");
         if (dummy == null)
         {
-            dummy = new GameObject("Enemy Dummy");
+            dummy = GameObject.Find("Beta Target Dummy");
         }
 
+        if (dummy == null)
+        {
+            dummy = new GameObject("Beta Target Dummy");
+        }
+
+        dummy.name = "Beta Target Dummy";
         dummy.transform.position = new Vector3(6f, -1.75f, 0f);
         dummy.transform.localScale = Vector3.one;
         PlaceholderSprites.MakeSquare(dummy, new Color(0.2f, 0.9f, 0.25f), 10);
@@ -91,6 +99,59 @@ public class GameTemplateBootstrap : MonoBehaviour
         {
             dummy.AddComponent<EnemyDummy>();
         }
+    }
+
+    private static void SetupMovementTestArea()
+    {
+        CreateSolidBlock("Beta Left Step Platform", new Vector3(-6f, -2.15f, 0f), new Vector3(3f, 0.35f, 1f), new Color(0.42f, 0.45f, 0.5f));
+        CreateSolidBlock("Beta Left Tall Obstacle", new Vector3(-9f, -2f, 0f), new Vector3(0.75f, 2f, 1f), new Color(0.5f, 0.42f, 0.35f));
+        CreateSolidBlock("Beta Duck Tunnel Ceiling", new Vector3(-13f, -1.55f, 0f), new Vector3(4.5f, 0.4f, 1f), new Color(0.35f, 0.5f, 0.48f));
+        CreateSolidBlock("Beta Raised Left Platform", new Vector3(-17f, -0.85f, 0f), new Vector3(4f, 0.35f, 1f), new Color(0.42f, 0.45f, 0.5f));
+        CreateSolidBlock("Beta Dash Test Wall", new Vector3(-21f, -1.85f, 0f), new Vector3(0.5f, 2.3f, 1f), new Color(0.5f, 0.42f, 0.35f));
+    }
+
+    private static void SetupShooter()
+    {
+        GameObject shooter = GameObject.Find("Beta Shooter Dummy");
+        if (shooter == null)
+        {
+            shooter = new GameObject("Beta Shooter Dummy");
+        }
+
+        shooter.transform.position = new Vector3(12f, -1.75f, 0f);
+        shooter.transform.localScale = Vector3.one;
+        PlaceholderSprites.MakeSquare(shooter, new Color(0.1f, 0.7f, 0.2f), 10);
+
+        BoxCollider2D collider = GetOrAdd<BoxCollider2D>(shooter);
+        collider.isTrigger = true;
+        collider.size = Vector2.one;
+
+        if (shooter.GetComponent<EnemyDummy>() == null)
+        {
+            shooter.AddComponent<EnemyDummy>();
+        }
+
+        if (shooter.GetComponent<EnemyShooter>() == null)
+        {
+            shooter.AddComponent<EnemyShooter>();
+        }
+    }
+
+    private static void CreateSolidBlock(string name, Vector3 position, Vector3 scale, Color color)
+    {
+        GameObject block = GameObject.Find(name);
+        if (block == null)
+        {
+            block = new GameObject(name);
+        }
+
+        block.transform.position = position;
+        block.transform.localScale = scale;
+        PlaceholderSprites.MakeSquare(block, color, 1);
+
+        BoxCollider2D collider = GetOrAdd<BoxCollider2D>(block);
+        collider.isTrigger = false;
+        collider.size = Vector2.one;
     }
 
     private static void SetupCamera(Transform player)

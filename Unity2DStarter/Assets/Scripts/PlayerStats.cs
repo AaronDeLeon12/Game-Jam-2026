@@ -47,6 +47,21 @@ public class PlayerStats : MonoBehaviour
         return TryPayCost(spellManaCost, manaRegenDelay);
     }
 
+    public void TakeDamage(float damage)
+    {
+        if (isDead)
+        {
+            return;
+        }
+
+        health = Mathf.Max(0f, health - Mathf.Max(0f, damage));
+
+        if (health <= 0f)
+        {
+            isDead = true;
+        }
+    }
+
     public bool TryPayCost(float manaCost, float regenDelay)
     {
         if (isDead)

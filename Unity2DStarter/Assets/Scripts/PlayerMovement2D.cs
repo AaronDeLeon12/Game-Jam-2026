@@ -17,17 +17,25 @@ public class PlayerMovement2D : MonoBehaviour
     [SerializeField] private float dashManaCost = 10f;
     [SerializeField] private float doubleJumpManaCost = 5f;
     [SerializeField] private float movementManaRegenDelay = 0.3f;
+    [SerializeField] private float duckSpeedMultiplier = 0.5f;
+    [SerializeField] private float duckHitboxHeightMultiplier = 0.5f;
 
     private Rigidbody2D body;
     private Collider2D playerCollider;
+    private BoxCollider2D boxCollider;
+    private SpriteRenderer playerRenderer;
     private PlayerStats playerStats;
     private float horizontalInput;
     private bool jumpRequested;
     private bool dashRequested;
     private bool isDashing;
+    private bool isDucking;
     private bool hasDoubleJumped;
     private float nextDashTime;
     private int facingDirection = 1;
+    private Vector2 standingColliderSize;
+    private Vector2 standingColliderOffset;
+    private Vector2 standingSpriteSize;
 
     public int FacingDirection => facingDirection;
 
@@ -35,14 +43,30 @@ public class PlayerMovement2D : MonoBehaviour
     {
         body = GetComponent<Rigidbody2D>();
         playerCollider = GetComponent<Collider2D>();
+        boxCollider = GetComponent<BoxCollider2D>();
+        playerRenderer = GetComponent<SpriteRenderer>();
         playerStats = GetComponent<PlayerStats>();
         body.gravityScale = gravityScale;
         body.freezeRotation = true;
+
+        if (boxCollider != null)
+        {
+            standingColliderSize = boxCollider.size;
+            standingColliderOffset = boxCollider.offset;
+        }
+
+        if (playerRenderer != null)
+        {
+            playerRenderer.drawMode = SpriteDrawMode.Sliced;
+            standingSpriteSize = playerRenderer.size;
+        }
     }
 
     private void Update()
     {
         horizontalInput = Input.GetAxisRaw("Horizontal");
+        isDucking = Input.GetKey(KeyCode.S);
+        ApplyDuckHitbox();
 
         if (horizontalInput > 0.01f)
         {
@@ -89,9 +113,10 @@ public class PlayerMovement2D : MonoBehaviour
         bool isGrounded = IsGrounded();
         bool isGliding = hasDoubleJumped && !isGrounded && Input.GetKey(KeyCode.Space) && body.linearVelocity.y <= 0f;
         body.gravityScale = isGliding ? glideGravityScale : gravityScale;
+        float currentMoveSpeed = isDucking ? moveSpeed * duckSpeedMultiplier : moveSpeed;
 
         Vector2 velocity = body.linearVelocity;
-        velocity.x = horizontalInput * moveSpeed;
+        velocity.x = horizontalInput * currentMoveSpeed;
 
         if (jumpRequested)
         {
@@ -125,6 +150,43 @@ public class PlayerMovement2D : MonoBehaviour
         }
 
         return playerStats == null || playerStats.TryPayCost(manaCost, movementManaRegenDelay);
+    }
+
+    private void ApplyDuckHitbox()
+    {
+        if (boxCollider == null)
+        {
+            return;
+        }
+
+        if (standingColliderSize == Vector2.zero)
+        {
+            standingColliderSize = boxCollider.size;
+            standingColliderOffset = boxCollider.offset;
+        }
+
+        if (isDucking)
+        {
+            float duckHeight = standingColliderSize.y * duckHitboxHeightMultiplier;
+            float heightDifference = standingColliderSize.y - duckHeight;
+            boxCollider.size = new Vector2(standingColliderSize.x, duckHeight);
+            boxCollider.offset = standingColliderOffset + Vector2.down * heightDifference * 0.5f;
+
+            if (playerRenderer != null)
+            {
+                playerRenderer.size = new Vector2(standingSpriteSize.x, standingSpriteSize.y * duckHitboxHeightMultiplier);
+            }
+        }
+        else
+        {
+            boxCollider.size = standingColliderSize;
+            boxCollider.offset = standingColliderOffset;
+
+            if (playerRenderer != null)
+            {
+                playerRenderer.size = standingSpriteSize;
+            }
+        }
     }
 
     private IEnumerator DashForward()

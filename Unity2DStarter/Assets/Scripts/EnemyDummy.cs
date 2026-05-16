@@ -3,12 +3,14 @@ using UnityEngine;
 
 public class EnemyDummy : MonoBehaviour
 {
-    [SerializeField] private float maxHealth = 3f;
+    [SerializeField] private float maxHealth = 100f;
     [SerializeField] private float respawnDelay = 3f;
 
     private float health;
     private SpriteRenderer spriteRenderer;
     private Collider2D bodyCollider;
+
+    public bool IsAlive => health > 0f;
 
     private void Awake()
     {

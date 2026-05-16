@@ -5,13 +5,13 @@ public class PlayerCombat : MonoBehaviour
     [SerializeField] private float projectileSpeed = 13f;
     [SerializeField] private float projectileRange = 3.5f;
     [SerializeField] private float squareManaCost = 20f;
-    [SerializeField] private float squareDamage = 1f;
+    [SerializeField] private float squareDamage = 33.34f;
     [SerializeField] private float squareCooldown = 0.8f;
     [SerializeField] private float triangleManaCost = 30f;
-    [SerializeField] private float triangleDamage = 3f;
+    [SerializeField] private float triangleDamage = 100f;
     [SerializeField] private float triangleCooldown = 2f;
     [SerializeField] private float circleManaCost = 10f;
-    [SerializeField] private float circleDamage = 0.5f;
+    [SerializeField] private float circleDamage = 16.67f;
     [SerializeField] private float circleCooldown = 0.4f;
     [SerializeField] private float spellManaRegenDelay = 3f;
 
