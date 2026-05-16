@@ -5,13 +5,14 @@ public class PlayerCombat : MonoBehaviour
     [SerializeField] private float projectileSpeed = 13f;
     [SerializeField] private float projectileRange = 3.5f;
     [SerializeField] private float squareManaCost = 20f;
-    [SerializeField] private float squareDamage = 1f;
+    [SerializeField] private float squareDamage = 33.34f;
     [SerializeField] private float squareCooldown = 0.8f;
     [SerializeField] private float triangleManaCost = 30f;
-    [SerializeField] private float triangleDamage = 3f;
+    [SerializeField] private float triangleDamage = 100f;
     [SerializeField] private float triangleCooldown = 2f;
     [SerializeField] private float circleManaCost = 10f;
-    [SerializeField] private float circleDamage = 0.5f;
+    [SerializeField] private float circleShieldHealth = 50f;
+    [SerializeField] private float circleShieldDuration = 3f;
     [SerializeField] private float circleCooldown = 0.4f;
     [SerializeField] private float spellManaRegenDelay = 3f;
 
@@ -45,7 +46,7 @@ public class PlayerCombat : MonoBehaviour
 
         if (Input.GetMouseButtonDown(0) && Time.time >= nextCastTime && stats.TryPayCost(GetManaCost(equippedSpell), spellManaRegenDelay))
         {
-            CastProjectile();
+            CastEquippedSpell();
             nextCastTime = Time.time + GetCooldown(equippedSpell);
         }
     }
@@ -60,6 +61,18 @@ public class PlayerCombat : MonoBehaviour
         else if (scroll < 0f)
         {
             equippedSpell = (SpellType)(((int)equippedSpell + 2) % 3);
+        }
+    }
+
+    private void CastEquippedSpell()
+    {
+        if (equippedSpell == SpellType.Circle)
+        {
+            CastCircleShield();
+        }
+        else
+        {
+            CastProjectile();
         }
     }
 
@@ -87,6 +100,36 @@ public class PlayerCombat : MonoBehaviour
         spell.Launch(direction, projectileSpeed, projectileRange, GetDamage(equippedSpell));
     }
 
+    private void CastCircleShield()
+    {
+        CircleShield existingShield = GetComponentInChildren<CircleShield>();
+        if (existingShield != null)
+        {
+            Destroy(existingShield.gameObject);
+        }
+
+        GameObject shieldObject = new GameObject("Circle Shield");
+        shieldObject.transform.SetParent(transform, false);
+        shieldObject.transform.localPosition = Vector3.zero;
+        shieldObject.transform.localScale = new Vector3(4.8f, 4.8f, 1f);
+
+        SpriteRenderer renderer = shieldObject.AddComponent<SpriteRenderer>();
+        renderer.sprite = ShapeSprites.Circle;
+        renderer.color = new Color(0.45f, 1f, 0.55f, 0.35f);
+        renderer.sortingOrder = 15;
+
+        CircleCollider2D collider = shieldObject.AddComponent<CircleCollider2D>();
+        collider.isTrigger = true;
+        collider.radius = 0.5f;
+
+        Rigidbody2D body = shieldObject.AddComponent<Rigidbody2D>();
+        body.bodyType = RigidbodyType2D.Kinematic;
+        body.gravityScale = 0f;
+
+        CircleShield shield = shieldObject.AddComponent<CircleShield>();
+        shield.Activate(circleShieldHealth, circleShieldDuration);
+    }
+
     private float GetManaCost(SpellType spellType)
     {
         switch (spellType)
@@ -106,8 +149,6 @@ public class PlayerCombat : MonoBehaviour
         {
             case SpellType.Triangle:
                 return triangleDamage;
-            case SpellType.Circle:
-                return circleDamage;
             default:
                 return squareDamage;
         }

@@ -17,17 +17,26 @@ public class PlayerMovement2D : MonoBehaviour
     [SerializeField] private float dashManaCost = 10f;
     [SerializeField] private float doubleJumpManaCost = 5f;
     [SerializeField] private float movementManaRegenDelay = 0.3f;
+    [SerializeField] private float duckSpeedMultiplier = 0.5f;
+    [SerializeField] private float duckHitboxHeightMultiplier = 0.5f;
 
     private Rigidbody2D body;
     private Collider2D playerCollider;
+    private BoxCollider2D boxCollider;
+    private SpriteRenderer playerRenderer;
     private PlayerStats playerStats;
     private float horizontalInput;
     private bool jumpRequested;
     private bool dashRequested;
     private bool isDashing;
+    private bool isDucking;
     private bool hasDoubleJumped;
     private float nextDashTime;
     private int facingDirection = 1;
+    private Vector2 standingColliderSize;
+    private Vector2 standingColliderOffset;
+    private Vector2 standingSpriteSize;
+    private Vector3 standingRendererLocalPosition;
 
     public int FacingDirection => facingDirection;
 
@@ -35,14 +44,37 @@ public class PlayerMovement2D : MonoBehaviour
     {
         body = GetComponent<Rigidbody2D>();
         playerCollider = GetComponent<Collider2D>();
+        boxCollider = GetComponent<BoxCollider2D>();
+        playerRenderer = GetComponentInChildren<SpriteRenderer>();
         playerStats = GetComponent<PlayerStats>();
         body.gravityScale = gravityScale;
         body.freezeRotation = true;
+
+        if (boxCollider != null)
+        {
+            standingColliderSize = boxCollider.size;
+            standingColliderOffset = boxCollider.offset;
+        }
+
+        if (playerRenderer != null)
+        {
+            playerRenderer.drawMode = SpriteDrawMode.Sliced;
+            standingSpriteSize = playerRenderer.size;
+            standingRendererLocalPosition = playerRenderer.transform.localPosition;
+        }
     }
 
     private void Update()
     {
         horizontalInput = Input.GetAxisRaw("Horizontal");
+        bool isGrounded = IsGrounded();
+        UpdateDuckingState(isGrounded);
+        bool isBlocking = playerStats != null && playerStats.IsBlocking;
+
+        if (isBlocking)
+        {
+            horizontalInput = 0f;
+        }
 
         if (horizontalInput > 0.01f)
         {
@@ -53,18 +85,16 @@ public class PlayerMovement2D : MonoBehaviour
             facingDirection = -1;
         }
 
-        bool isGrounded = IsGrounded();
-
         if (isGrounded)
         {
             hasDoubleJumped = false;
         }
 
-        if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
+        if (JumpWasPressed() && isGrounded && !isDucking && !isBlocking)
         {
             jumpRequested = true;
         }
-        else if (Input.GetKeyDown(KeyCode.Space) && !hasDoubleJumped && TryPayMovementCost(doubleJumpManaCost))
+        else if (JumpWasPressed() && !isGrounded && !hasDoubleJumped && !isBlocking && TryPayMovementCost(doubleJumpManaCost))
         {
             jumpRequested = true;
             hasDoubleJumped = true;
@@ -72,6 +102,7 @@ public class PlayerMovement2D : MonoBehaviour
 
         if ((Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.RightShift))
             && Time.time >= nextDashTime
+            && !isBlocking
             && TryPayMovementCost(dashManaCost))
         {
             dashRequested = true;
@@ -87,11 +118,13 @@ public class PlayerMovement2D : MonoBehaviour
         }
 
         bool isGrounded = IsGrounded();
-        bool isGliding = hasDoubleJumped && !isGrounded && Input.GetKey(KeyCode.Space) && body.linearVelocity.y <= 0f;
+        bool isBlocking = playerStats != null && playerStats.IsBlocking;
+        bool isGliding = hasDoubleJumped && !isGrounded && JumpIsHeld() && !isBlocking && body.linearVelocity.y <= 0f;
         body.gravityScale = isGliding ? glideGravityScale : gravityScale;
+        float currentMoveSpeed = isDucking ? moveSpeed * duckSpeedMultiplier : moveSpeed;
 
         Vector2 velocity = body.linearVelocity;
-        velocity.x = horizontalInput * moveSpeed;
+        velocity.x = isBlocking ? 0f : horizontalInput * currentMoveSpeed;
 
         if (jumpRequested)
         {
@@ -117,6 +150,16 @@ public class PlayerMovement2D : MonoBehaviour
         return Mathf.Sqrt(2f * Mathf.Abs(Physics2D.gravity.y) * gravityScale * jumpHeight);
     }
 
+    private static bool JumpWasPressed()
+    {
+        return Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.W);
+    }
+
+    private static bool JumpIsHeld()
+    {
+        return Input.GetKey(KeyCode.Space) || Input.GetKey(KeyCode.W);
+    }
+
     private bool TryPayMovementCost(float manaCost)
     {
         if (playerStats == null)
@@ -125,6 +168,113 @@ public class PlayerMovement2D : MonoBehaviour
         }
 
         return playerStats == null || playerStats.TryPayCost(manaCost, movementManaRegenDelay);
+    }
+
+    private void ApplyDuckHitbox()
+    {
+        if (boxCollider == null)
+        {
+            return;
+        }
+
+        RefreshPlayerRenderer();
+
+        if (standingColliderSize == Vector2.zero)
+        {
+            standingColliderSize = boxCollider.size;
+            standingColliderOffset = boxCollider.offset;
+        }
+
+        if (isDucking)
+        {
+            float duckHeight = standingColliderSize.y * duckHitboxHeightMultiplier;
+            float heightDifference = standingColliderSize.y - duckHeight;
+            boxCollider.size = new Vector2(standingColliderSize.x, duckHeight);
+            boxCollider.offset = standingColliderOffset + Vector2.down * heightDifference * 0.5f;
+
+            if (playerRenderer != null)
+            {
+                playerRenderer.size = new Vector2(standingSpriteSize.x, standingSpriteSize.y * duckHitboxHeightMultiplier);
+                playerRenderer.transform.localPosition = standingRendererLocalPosition + Vector3.down * heightDifference * 0.5f;
+            }
+        }
+        else
+        {
+            boxCollider.size = standingColliderSize;
+            boxCollider.offset = standingColliderOffset;
+
+            if (playerRenderer != null)
+            {
+                playerRenderer.size = standingSpriteSize;
+                playerRenderer.transform.localPosition = standingRendererLocalPosition;
+            }
+        }
+    }
+
+    private void UpdateDuckingState(bool isGrounded)
+    {
+        bool wantsToDuck = Input.GetKey(KeyCode.S);
+        bool canStartDuck = isGrounded && IsNearlyStill();
+
+        if (wantsToDuck && (isDucking || canStartDuck))
+        {
+            isDucking = true;
+        }
+        else if (!wantsToDuck && (!isDucking || CanStandUp()))
+        {
+            isDucking = false;
+        }
+
+        if (!isGrounded)
+        {
+            isDucking = false;
+        }
+
+        ApplyDuckHitbox();
+    }
+
+    private void RefreshPlayerRenderer()
+    {
+        if (playerRenderer != null)
+        {
+            return;
+        }
+
+        playerRenderer = GetComponentInChildren<SpriteRenderer>();
+        if (playerRenderer == null)
+        {
+            return;
+        }
+
+        playerRenderer.drawMode = SpriteDrawMode.Sliced;
+        standingSpriteSize = playerRenderer.size;
+        standingRendererLocalPosition = playerRenderer.transform.localPosition;
+    }
+
+    private bool IsNearlyStill()
+    {
+        return Mathf.Abs(horizontalInput) < 0.01f && Mathf.Abs(body.linearVelocity.x) < 0.05f;
+    }
+
+    private bool CanStandUp()
+    {
+        if (boxCollider == null)
+        {
+            return true;
+        }
+
+        Vector2 center = (Vector2)transform.position + standingColliderOffset;
+        Collider2D[] hits = Physics2D.OverlapBoxAll(center, standingColliderSize * 0.95f, 0f, groundLayers);
+
+        foreach (Collider2D hit in hits)
+        {
+            if (hit != null && hit != playerCollider && !hit.isTrigger)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private IEnumerator DashForward()
@@ -165,7 +315,11 @@ public class PlayerMovement2D : MonoBehaviour
         {
             if (hit != null && hit != playerCollider)
             {
-                return true;
+                GroundSurface2D groundSurface = hit.GetComponent<GroundSurface2D>();
+                if (groundSurface != null && bounds.min.y >= hit.bounds.max.y - 0.12f)
+                {
+                    return true;
+                }
             }
         }
 

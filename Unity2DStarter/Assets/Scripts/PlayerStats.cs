@@ -13,6 +13,7 @@ public class PlayerStats : MonoBehaviour
     private float mana;
     private float manaRegenBlockedUntil;
     private bool isDead;
+    private bool isBlocking;
 
     public float Health => health;
     public float Mana => mana;
@@ -22,6 +23,7 @@ public class PlayerStats : MonoBehaviour
     public float SpellHealthCost => ConvertManaDebtToHealth(spellManaCost);
     public float ManaRegenDelayRemaining => Mathf.Max(0f, manaRegenBlockedUntil - Time.time);
     public bool IsDead => isDead;
+    public bool IsBlocking => isBlocking && !isDead;
 
     private void Awake()
     {
@@ -33,8 +35,11 @@ public class PlayerStats : MonoBehaviour
     {
         if (isDead)
         {
+            isBlocking = false;
             return;
         }
+
+        isBlocking = Input.GetMouseButton(1);
 
         if (Time.time >= manaRegenBlockedUntil && mana < maxMana)
         {
@@ -45,6 +50,22 @@ public class PlayerStats : MonoBehaviour
     public bool TryPaySpellCost()
     {
         return TryPayCost(spellManaCost, manaRegenDelay);
+    }
+
+    public void TakeDamage(float damage)
+    {
+        if (isDead)
+        {
+            return;
+        }
+
+        float finalDamage = IsBlocking ? damage * 0.5f : damage;
+        health = Mathf.Max(0f, health - Mathf.Max(0f, finalDamage));
+
+        if (health <= 0f)
+        {
+            isDead = true;
+        }
     }
 
     public bool TryPayCost(float manaCost, float regenDelay)
