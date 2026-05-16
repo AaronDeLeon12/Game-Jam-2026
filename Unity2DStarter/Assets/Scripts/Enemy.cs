@@ -5,7 +5,7 @@ using UnityEngine;
 public class Enemy : MonoBehaviour, IDamageable
 {
     [Header("Stats")]
-    [SerializeField] private float maxHealth = 10f;
+    [SerializeField] private float maxHealth = 100f;
     [SerializeField] private float moveSpeed = 2f;
 
     [Header("Ranges")]

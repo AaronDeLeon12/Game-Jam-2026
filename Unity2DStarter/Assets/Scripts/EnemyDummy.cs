@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class EnemyDummy : MonoBehaviour, IDamageable
 {
-    [SerializeField] private float maxHealth = 100f;
+    [SerializeField] private float maxHealth = 5f;
     [SerializeField] private float respawnDelay = 3f;
 
     private float health;

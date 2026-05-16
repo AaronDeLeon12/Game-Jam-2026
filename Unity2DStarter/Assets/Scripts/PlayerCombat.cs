@@ -5,7 +5,7 @@ public class PlayerCombat : MonoBehaviour
     [SerializeField] private float projectileSpeed = 13f;
     [SerializeField] private float projectileRange = 3.5f;
     [SerializeField] private float squareManaCost = 20f;
-    [SerializeField] private float squareDamage = 33.34f;
+    [SerializeField] private float squareDamage = 33.4f;
     [SerializeField] private float squareCooldown = 0.8f;
     [SerializeField] private float triangleManaCost = 30f;
     [SerializeField] private float triangleDamage = 100f;
@@ -119,12 +119,18 @@ public class PlayerCombat : MonoBehaviour
         renderer.sortingOrder = 15;
 
         CircleCollider2D collider = shieldObject.AddComponent<CircleCollider2D>();
-        collider.isTrigger = true;
+        collider.isTrigger = false;
         collider.radius = 0.5f;
 
         Rigidbody2D body = shieldObject.AddComponent<Rigidbody2D>();
         body.bodyType = RigidbodyType2D.Kinematic;
         body.gravityScale = 0f;
+
+        Collider2D playerCollider = GetComponent<Collider2D>();
+        if (playerCollider != null)
+        {
+            Physics2D.IgnoreCollision(collider, playerCollider, true);
+        }
 
         CircleShield shield = shieldObject.AddComponent<CircleShield>();
         shield.Activate(circleShieldHealth, circleShieldDuration);
