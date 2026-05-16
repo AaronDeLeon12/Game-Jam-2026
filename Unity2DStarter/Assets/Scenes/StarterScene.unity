@@ -304,12 +304,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 109e598838b1ec344a3e906c56d9b2bf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement2D
-  moveSpeed: 5
-  jumpForce: 10
+  moveSpeed: 7
+  jumpHeight: 2.5
   groundLayers:
     serializedVersion: 2
     m_Bits: 4294967295
-  gravityScale: 4.5
+  gravityScale: 5
+  fallGravityMultiplier: 1.7
+  glideGravityScale: 1.25
+  dashDistance: 3
+  dashDisappearTime: 0.12
+  dashCooldown: 1.5
+  dashManaCost: 10
+  doubleJumpManaCost: 5
+  movementManaRegenDelay: 0.3
 --- !u!61 &1086756932
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -371,7 +379,7 @@ Rigidbody2D:
   m_Mass: 1
   m_LinearDamping: 0
   m_AngularDamping: 0.05
-  m_GravityScale: 4.5
+  m_GravityScale: 5
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2

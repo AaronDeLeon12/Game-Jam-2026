@@ -3,37 +3,42 @@ using UnityEngine;
 
 public class EnemyDummy : MonoBehaviour
 {
-    [SerializeField] private int maxHits = 3;
+    [SerializeField] private float maxHealth = 3f;
     [SerializeField] private float respawnDelay = 3f;
 
-    private int hitsRemaining;
+    private float health;
     private SpriteRenderer spriteRenderer;
     private Collider2D bodyCollider;
 
     private void Awake()
     {
         RefreshComponents();
-        hitsRemaining = maxHits;
+        health = maxHealth;
     }
 
     public void TakeHit()
     {
+        TakeDamage(1f);
+    }
+
+    public void TakeDamage(float damage)
+    {
         RefreshComponents();
 
-        if (hitsRemaining <= 0)
+        if (health <= 0f)
         {
             return;
         }
 
-        hitsRemaining--;
+        health = Mathf.Max(0f, health - damage);
 
         if (spriteRenderer != null)
         {
-            float healthPercent = hitsRemaining / (float)maxHits;
+            float healthPercent = health / maxHealth;
             spriteRenderer.color = Color.Lerp(new Color(0.35f, 0.1f, 0.1f), new Color(0.2f, 0.9f, 0.25f), healthPercent);
         }
 
-        if (hitsRemaining <= 0)
+        if (health <= 0f)
         {
             StartCoroutine(RespawnAfterDelay());
         }
@@ -43,7 +48,7 @@ public class EnemyDummy : MonoBehaviour
     {
         SetVisible(false);
         yield return new WaitForSeconds(respawnDelay);
-        hitsRemaining = maxHits;
+        health = maxHealth;
         SetVisible(true);
     }
 

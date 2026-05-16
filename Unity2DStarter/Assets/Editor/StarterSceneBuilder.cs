@@ -50,7 +50,7 @@ public static class StarterSceneBuilder
         GameObject player = CreateSpriteObject("Player", PlatformSpritePath, new Vector3(0f, -1.75f, 0f), new Vector3(1f, 1f, 1f), 10);
         player.GetComponent<SpriteRenderer>().color = Color.white;
         Rigidbody2D body = player.AddComponent<Rigidbody2D>();
-        body.gravityScale = 4.5f;
+        body.gravityScale = 5f;
         body.freezeRotation = true;
         player.AddComponent<BoxCollider2D>();
         player.AddComponent<PlayerMovement2D>();

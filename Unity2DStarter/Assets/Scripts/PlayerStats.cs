@@ -5,12 +5,13 @@ public class PlayerStats : MonoBehaviour
     [SerializeField] private float maxHealth = 100f;
     [SerializeField] private float maxMana = 100f;
     [SerializeField] private float spellManaCost = 20f;
-    [SerializeField] private float manaRegenDelay = 5f;
-    [SerializeField] private float manaRegenPerSecond = 25f;
+    [SerializeField] private float manaRegenDelay = 3f;
+    [SerializeField] private float manaRegenPerSecond = 20f;
+    [SerializeField] private float healthValueInMana = 2f;
 
     private float health;
     private float mana;
-    private float lastCastTime = -999f;
+    private float manaRegenBlockedUntil;
     private bool isDead;
 
     public float Health => health;
@@ -18,8 +19,8 @@ public class PlayerStats : MonoBehaviour
     public float MaxHealth => maxHealth;
     public float MaxMana => maxMana;
     public float SpellManaCost => spellManaCost;
-    public float SpellHealthCost => spellManaCost * 0.5f;
-    public float ManaRegenDelayRemaining => Mathf.Max(0f, manaRegenDelay - (Time.time - lastCastTime));
+    public float SpellHealthCost => ConvertManaDebtToHealth(spellManaCost);
+    public float ManaRegenDelayRemaining => Mathf.Max(0f, manaRegenBlockedUntil - Time.time);
     public bool IsDead => isDead;
 
     private void Awake()
@@ -35,7 +36,7 @@ public class PlayerStats : MonoBehaviour
             return;
         }
 
-        if (Time.time - lastCastTime >= manaRegenDelay && mana < maxMana)
+        if (Time.time >= manaRegenBlockedUntil && mana < maxMana)
         {
             mana = Mathf.Min(maxMana, mana + manaRegenPerSecond * Time.deltaTime);
         }
@@ -43,21 +44,28 @@ public class PlayerStats : MonoBehaviour
 
     public bool TryPaySpellCost()
     {
+        return TryPayCost(spellManaCost, manaRegenDelay);
+    }
+
+    public bool TryPayCost(float manaCost, float regenDelay)
+    {
         if (isDead)
         {
             return false;
         }
 
-        if (mana >= spellManaCost)
+        float manaPaid = Mathf.Min(mana, manaCost);
+        float remainingManaCost = manaCost - manaPaid;
+        float healthCost = ConvertManaDebtToHealth(remainingManaCost);
+
+        mana -= manaPaid;
+
+        if (healthCost > 0f)
         {
-            mana -= spellManaCost;
-            lastCastTime = Time.time;
-            return true;
+            health = Mathf.Max(0f, health - healthCost);
         }
 
-        float healthCost = SpellHealthCost;
-        health = Mathf.Max(0f, health - healthCost);
-        lastCastTime = Time.time;
+        manaRegenBlockedUntil = Mathf.Max(manaRegenBlockedUntil, Time.time + regenDelay);
 
         if (health <= 0f)
         {
@@ -65,5 +73,10 @@ public class PlayerStats : MonoBehaviour
         }
 
         return true;
+    }
+
+    public float ConvertManaDebtToHealth(float manaDebt)
+    {
+        return Mathf.Ceil(Mathf.Max(0f, manaDebt) / healthValueInMana);
     }
 }

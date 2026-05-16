@@ -2,13 +2,26 @@ using UnityEngine;
 
 public class PlayerCombat : MonoBehaviour
 {
-    [SerializeField] private float projectileSpeed = 12f;
-    [SerializeField] private float projectileRange = 3f;
-    [SerializeField] private float castCooldown = 0.6f;
+    [SerializeField] private float projectileSpeed = 13f;
+    [SerializeField] private float projectileRange = 3.5f;
+    [SerializeField] private float squareManaCost = 20f;
+    [SerializeField] private float squareDamage = 1f;
+    [SerializeField] private float squareCooldown = 0.8f;
+    [SerializeField] private float triangleManaCost = 30f;
+    [SerializeField] private float triangleDamage = 3f;
+    [SerializeField] private float triangleCooldown = 2f;
+    [SerializeField] private float circleManaCost = 10f;
+    [SerializeField] private float circleDamage = 0.5f;
+    [SerializeField] private float circleCooldown = 0.4f;
+    [SerializeField] private float spellManaRegenDelay = 3f;
 
     private PlayerMovement2D movement;
     private PlayerStats stats;
     private float nextCastTime;
+    private SpellType equippedSpell = SpellType.Square;
+
+    public SpellType EquippedSpell => equippedSpell;
+    public Color EquippedSpellColor => GetSpellColor(equippedSpell);
 
     private void Awake()
     {
@@ -28,10 +41,25 @@ public class PlayerCombat : MonoBehaviour
             return;
         }
 
-        if (Input.GetMouseButtonDown(1) && Time.time >= nextCastTime && stats.TryPaySpellCost())
+        HandleSpellScroll();
+
+        if (Input.GetMouseButtonDown(0) && Time.time >= nextCastTime && stats.TryPayCost(GetManaCost(equippedSpell), spellManaRegenDelay))
         {
             CastProjectile();
-            nextCastTime = Time.time + castCooldown;
+            nextCastTime = Time.time + GetCooldown(equippedSpell);
+        }
+    }
+
+    private void HandleSpellScroll()
+    {
+        float scroll = Input.mouseScrollDelta.y;
+        if (scroll > 0f)
+        {
+            equippedSpell = (SpellType)(((int)equippedSpell + 1) % 3);
+        }
+        else if (scroll < 0f)
+        {
+            equippedSpell = (SpellType)(((int)equippedSpell + 2) % 3);
         }
     }
 
@@ -43,7 +71,10 @@ public class PlayerCombat : MonoBehaviour
         GameObject projectile = new GameObject("Spell Projectile");
         projectile.transform.position = spawnPosition;
         projectile.transform.localScale = Vector3.one;
-        PlaceholderSprites.MakeSquare(projectile, new Color(0.35f, 0.75f, 1f), 20);
+        SpriteRenderer renderer = projectile.AddComponent<SpriteRenderer>();
+        renderer.sprite = ShapeSprites.Get(equippedSpell);
+        renderer.color = GetSpellColor(equippedSpell);
+        renderer.sortingOrder = 20;
 
         BoxCollider2D collider = projectile.AddComponent<BoxCollider2D>();
         collider.isTrigger = true;
@@ -53,6 +84,58 @@ public class PlayerCombat : MonoBehaviour
         body.gravityScale = 0f;
 
         SpellProjectile spell = projectile.AddComponent<SpellProjectile>();
-        spell.Launch(direction, projectileSpeed, projectileRange);
+        spell.Launch(direction, projectileSpeed, projectileRange, GetDamage(equippedSpell));
+    }
+
+    private float GetManaCost(SpellType spellType)
+    {
+        switch (spellType)
+        {
+            case SpellType.Triangle:
+                return triangleManaCost;
+            case SpellType.Circle:
+                return circleManaCost;
+            default:
+                return squareManaCost;
+        }
+    }
+
+    private float GetDamage(SpellType spellType)
+    {
+        switch (spellType)
+        {
+            case SpellType.Triangle:
+                return triangleDamage;
+            case SpellType.Circle:
+                return circleDamage;
+            default:
+                return squareDamage;
+        }
+    }
+
+    private float GetCooldown(SpellType spellType)
+    {
+        switch (spellType)
+        {
+            case SpellType.Triangle:
+                return triangleCooldown;
+            case SpellType.Circle:
+                return circleCooldown;
+            default:
+                return squareCooldown;
+        }
+    }
+
+    private static Color GetSpellColor(SpellType spellType)
+    {
+        switch (spellType)
+        {
+            case SpellType.Triangle:
+                return new Color(1f, 0.72f, 0.1f);
+            case SpellType.Circle:
+                return new Color(0.45f, 1f, 0.55f);
+            default:
+                return new Color(0.35f, 0.75f, 1f);
+        }
     }
 }
