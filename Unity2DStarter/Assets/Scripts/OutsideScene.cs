@@ -20,6 +20,21 @@ public class OutsideScene : MonoBehaviour
 
         SystemsBootstrap.EnsureExists();
 
+        // The camera is persistent; reset the zoom in case we came from the
+        // home scene (which zooms in).
+        Camera cam = SystemsBootstrap.Instance != null && SystemsBootstrap.Instance.GameCamera != null
+            ? SystemsBootstrap.Instance.GameCamera
+            : Camera.main;
+        if (cam != null)
+        {
+            cam.orthographicSize = 5f;
+            CameraFollow2D follow = cam.GetComponent<CameraFollow2D>();
+            if (follow != null)
+            {
+                follow.SetOffset(new Vector3(0f, 2.5f, -10f));
+            }
+        }
+
         GameObject spawn = new GameObject("Player Spawn Point");
         spawn.transform.position = new Vector3(-8f, 0.5f, 0f);
         spawn.AddComponent<PlayerSpawnPoint>();

@@ -12,6 +12,14 @@ public class CameraFollow2D : MonoBehaviour
         Snap();
     }
 
+    public void SetOffset(Vector3 newOffset)
+    {
+        offset = newOffset;
+        Snap();
+    }
+
+    public Vector3 Offset => offset;
+
     public void Snap()
     {
         if (target != null)
