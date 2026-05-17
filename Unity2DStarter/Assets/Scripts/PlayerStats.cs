@@ -52,7 +52,7 @@ public class PlayerStats : MonoBehaviour
             return;
         }
 
-        isBlocking = Input.GetMouseButton(1);
+        isBlocking = Input.GetMouseButton(1) && !HomeMode.IsActive;
         if (isBlocking && !wasBlocking && Time.time >= nextParryReadyTime)
         {
             parryWindowEndTime = Time.time + parryWindowDuration;

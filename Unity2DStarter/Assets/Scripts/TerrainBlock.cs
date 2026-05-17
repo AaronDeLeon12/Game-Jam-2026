@@ -54,6 +54,7 @@ public class TerrainBlock : MonoBehaviour
         sr.size = size;
         sr.color = colorOverride.a > 0f ? colorOverride : DefaultColor(type);
         sr.sortingOrder = type == TerrainType.Floor ? 0 : 1;
+        SpriteLit.Apply(sr);
 
         BoxCollider2D col = GetComponent<BoxCollider2D>();
         col.isTrigger = false;

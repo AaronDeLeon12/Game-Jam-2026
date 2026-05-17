@@ -12,6 +12,11 @@ public class GameHud : MonoBehaviour
 
     private void OnGUI()
     {
+        if (HomeMode.IsActive)
+        {
+            return;
+        }
+
         if (playerStats == null)
         {
             GameObject player = GameObject.Find("Player");
