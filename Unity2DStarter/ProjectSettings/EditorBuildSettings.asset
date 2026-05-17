@@ -23,4 +23,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/SurvivalTesting.unity
     guid: bbef638fb02d45c383051a48629ac7af
+  - enabled: 1
+    path: Assets/Scenes/boss_fight_scenario.unity
+    guid: 4cf4cd32b7436224e8005b99d4f73819
   m_configObjects: {}
