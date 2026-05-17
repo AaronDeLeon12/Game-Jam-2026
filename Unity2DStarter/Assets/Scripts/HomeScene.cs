@@ -8,6 +8,10 @@ using UnityEngine.Rendering.Universal;
 /// </summary>
 public class HomeScene : MonoBehaviour
 {
+    [SerializeField] private float cameraOrthographicSize = 2.4f;
+    [Tooltip("Lower = camera sits lower so more floor is visible (default offset.y is 2.5).")]
+    [SerializeField] private float cameraOffsetY = 0.6f;
+
     private int day = 1;
 
     private void Awake()
@@ -15,30 +19,55 @@ public class HomeScene : MonoBehaviour
         HomeMode.IsActive = true;
 
         DayManager.EnsureExists();
+
+        // Create the flat light before EnsureExists() so the systems' dim
+        // global light is skipped (it only adds one when none exists).
+        BuildFlatLight();
+
         SystemsBootstrap.EnsureExists();
         GameAudio.PlayMusic("MainMenuOrHouse", 0.4f);
+        ApplyCameraZoom();
 
         day = DayManager.Instance != null ? DayManager.Instance.CurrentDay : 1;
 
         BuildSpawnPoint();
-        BuildInteriorLight();
         // Base home layout (floor/walls) is now authored visually in the
         // home_day_1 scene. Only per-day changes are built in code.
         BuildDayVariations(day);
     }
 
-    private void BuildInteriorLight()
+    private void ApplyCameraZoom()
     {
-        GameObject lightObj = new GameObject("Home Interior Light");
-        lightObj.transform.position = new Vector3(0f, -0.5f, 0f);
+        Camera cam = SystemsBootstrap.Instance != null && SystemsBootstrap.Instance.GameCamera != null
+            ? SystemsBootstrap.Instance.GameCamera
+            : Camera.main;
+
+        if (cam != null)
+        {
+            cam.orthographic = true;
+            cam.orthographicSize = cameraOrthographicSize;
+
+            CameraFollow2D follow = cam.GetComponent<CameraFollow2D>();
+            if (follow != null)
+            {
+                follow.SetOffset(new Vector3(0f, cameraOffsetY, -10f));
+            }
+        }
+    }
+
+    // No mood lighting in the home: a full, neutral global light so sprites
+    // render at their true colors (Sprite-Lit needs *some* light or it goes
+    // black). Created before EnsureExists() would not matter here since this
+    // runs after it, but the systems' dim global is skipped when a global
+    // light already exists.
+    private void BuildFlatLight()
+    {
+        GameObject lightObj = new GameObject("Home Flat Light");
 
         Light2D light = lightObj.AddComponent<Light2D>();
-        light.lightType = Light2D.LightType.Point;
-        // Warm interior glow so the house reads bright vs the dark exterior.
-        light.color = new Color(1f, 0.86f, 0.62f);
-        light.intensity = 1.4f;
-        light.pointLightInnerRadius = 3f;
-        light.pointLightOuterRadius = 13f;
+        light.lightType = Light2D.LightType.Global;
+        light.color = Color.white;
+        light.intensity = 1f;
     }
 
     private void OnDestroy()
@@ -49,7 +78,7 @@ public class HomeScene : MonoBehaviour
     private void BuildSpawnPoint()
     {
         GameObject spawn = new GameObject("Player Spawn Point");
-        spawn.transform.position = new Vector3(-2f, 0.5f, 0f);
+        spawn.transform.position = new Vector3(-2f, 1.75f, 0f);
         spawn.AddComponent<PlayerSpawnPoint>();
     }
 
