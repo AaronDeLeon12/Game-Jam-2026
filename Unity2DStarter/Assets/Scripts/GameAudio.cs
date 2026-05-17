@@ -4,6 +4,12 @@ using UnityEngine;
 public static class GameAudio
 {
     private static readonly Dictionary<string, AudioClip> ClipCache = new Dictionary<string, AudioClip>();
+    private static readonly string[] SearchFolders =
+    {
+        "Audio/",
+        "Audio/SFX/",
+        "Audio/Music/"
+    };
 
     public static void PlaySfx(string clipName, Vector3 position, float volume = 1f)
     {
@@ -55,12 +61,16 @@ public static class GameAudio
             return clip;
         }
 
-        clip = Resources.Load<AudioClip>("Audio/" + clipName);
-        if (clip != null)
+        foreach (string folder in SearchFolders)
         {
-            ClipCache.Add(clipName, clip);
+            clip = Resources.Load<AudioClip>(folder + clipName);
+            if (clip != null)
+            {
+                ClipCache.Add(clipName, clip);
+                return clip;
+            }
         }
 
-        return clip;
+        return null;
     }
 }
