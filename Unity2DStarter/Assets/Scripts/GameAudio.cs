@@ -13,7 +13,17 @@ public static class GameAudio
             return;
         }
 
-        AudioSource.PlayClipAtPoint(clip, position, volume);
+        GameObject audioObject = new GameObject("One Shot SFX");
+        audioObject.transform.position = position;
+
+        AudioSource source = audioObject.AddComponent<AudioSource>();
+        source.clip = clip;
+        source.volume = volume;
+        source.spatialBlend = 0f;
+        source.ignoreListenerPause = true;
+        source.Play();
+
+        Object.Destroy(audioObject, clip.length + 0.1f);
     }
 
     public static AudioClip LoadClip(string clipName)

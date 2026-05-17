@@ -80,6 +80,7 @@ public class PlayerStats : MonoBehaviour
         float finalDamage = IsBlocking ? damage * 0.5f : damage;
         health = Mathf.Max(0f, health - Mathf.Max(0f, finalDamage));
         HitFlash2D.Play(gameObject, IsBlocking ? new Color(0.4f, 0.75f, 1f) : new Color(1f, 0.2f, 0.15f));
+        GameAudio.PlaySfx("playerDamagedSF", transform.position, 0.8f);
 
         if (IsBlocking && Time.time <= parryWindowEndTime)
         {

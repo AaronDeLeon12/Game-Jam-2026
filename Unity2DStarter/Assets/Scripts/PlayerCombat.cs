@@ -126,6 +126,7 @@ public class PlayerCombat : MonoBehaviour
 
         SpellProjectile spell = projectile.AddComponent<SpellProjectile>();
         spell.Launch(direction, projectileSpeed, projectileRange, GetDamage(equippedSpell));
+        GameAudio.PlaySfx(equippedSpell == SpellType.Triangle ? "triangleSF" : "squareSF", transform.position, 0.85f);
     }
 
     private void CastCircleShield()
@@ -162,7 +163,7 @@ public class PlayerCombat : MonoBehaviour
 
         CircleShield shield = shieldObject.AddComponent<CircleShield>();
         shield.Activate(circleShieldHealth, circleShieldDuration);
-        GameAudio.PlaySfx("ShieldSF", transform.position, 0.85f);
+        GameAudio.PlaySfx("shieldOnSF", transform.position, 0.85f);
     }
 
     private void CastKnifeAttack()

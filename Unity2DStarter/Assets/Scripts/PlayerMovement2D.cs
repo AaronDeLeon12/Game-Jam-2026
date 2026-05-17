@@ -32,6 +32,7 @@ public class PlayerMovement2D : MonoBehaviour
     private bool isDashing;
     private bool isDucking;
     private bool hasDoubleJumped;
+    private bool wasGliding;
     private float nextDashTime;
     private int facingDirection = 1;
     private Vector2 standingColliderSize;
@@ -105,11 +106,13 @@ public class PlayerMovement2D : MonoBehaviour
         if (JumpWasPressed() && isGrounded && !isDucking && !isBlocking)
         {
             jumpRequested = true;
+            GameAudio.PlaySfx("jumpsf", transform.position, 0.75f);
         }
         else if (JumpWasPressed() && !isGrounded && !hasDoubleJumped && !isBlocking && TryPayMovementCost(doubleJumpManaCost))
         {
             jumpRequested = true;
             hasDoubleJumped = true;
+            GameAudio.PlaySfx("doubleJumpSF", transform.position, 0.75f);
         }
 
         if ((Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.RightShift))
@@ -132,6 +135,12 @@ public class PlayerMovement2D : MonoBehaviour
         bool isGrounded = IsGrounded();
         bool isBlocking = playerStats != null && playerStats.IsBlocking;
         bool isGliding = hasDoubleJumped && !isGrounded && JumpIsHeld() && !isBlocking && body.linearVelocity.y <= 0f;
+        if (isGliding && !wasGliding)
+        {
+            GameAudio.PlaySfx("glideSF", transform.position, 0.45f);
+        }
+
+        wasGliding = isGliding;
         body.gravityScale = isGliding ? glideGravityScale : gravityScale;
         float currentMoveSpeed = isDucking ? moveSpeed * duckSpeedMultiplier : moveSpeed;
 

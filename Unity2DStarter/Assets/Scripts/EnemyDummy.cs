@@ -48,6 +48,7 @@ public class EnemyDummy : MonoBehaviour, IDamageable
         }
 
         HitFlash2D.Play(gameObject, Color.white, 0.06f);
+        GameAudio.PlaySfx("hitSFX", transform.position, 0.65f);
 
         if (health <= 0f)
         {

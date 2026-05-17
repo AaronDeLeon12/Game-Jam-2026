@@ -32,6 +32,8 @@ public class PauseMenu : MonoBehaviour
 
     private void Pause()
     {
+        GameAudio.PlaySfx("pauseSFX", transform.position, 0.75f);
+
         // The canvas is a scene object; if the level changed it was destroyed
         // while this persistent component survived, so rebuild when needed.
         if (canvasRoot == null)
@@ -53,6 +55,8 @@ public class PauseMenu : MonoBehaviour
 
     private void Resume()
     {
+        GameAudio.PlaySfx("pauseSFX", transform.position, 0.75f);
+
         IsPaused = false;
         Time.timeScale = 1f;
         AudioListener.pause = false;

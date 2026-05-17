@@ -88,7 +88,11 @@ public static class MenuUI
 
         Button btn = go.AddComponent<Button>();
         btn.targetGraphic = img;
-        btn.onClick.AddListener(onClick);
+        btn.onClick.AddListener(() =>
+        {
+            GameAudio.PlaySfx("UIpressSFX", Vector3.zero, 0.7f);
+            onClick?.Invoke();
+        });
 
         RectTransform rt = go.GetComponent<RectTransform>();
         rt.anchorMin = new Vector2(0.5f, 0.5f);
