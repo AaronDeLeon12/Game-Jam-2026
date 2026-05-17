@@ -13,6 +13,28 @@ public static class GameAudio
             return;
         }
 
+        AudioManager.EnsureExists().PlaySFX(clip, volume);
+    }
+
+    public static void PlayMusic(string clipName, float volume = 0.45f)
+    {
+        AudioClip clip = LoadClip(clipName);
+        if (clip == null)
+        {
+            return;
+        }
+
+        AudioManager.EnsureExists().PlayMusic(clip, volume);
+    }
+
+    public static void PlayOneShotAtPoint(string clipName, Vector3 position, float volume = 1f)
+    {
+        AudioClip clip = LoadClip(clipName);
+        if (clip == null)
+        {
+            return;
+        }
+
         GameObject audioObject = new GameObject("One Shot SFX");
         audioObject.transform.position = position;
 

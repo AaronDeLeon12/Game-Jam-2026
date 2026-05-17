@@ -23,6 +23,7 @@ public class SystemsBootstrap : MonoBehaviour
         }
 
         GameObject systems = new GameObject("Systems");
+        AudioManager.EnsureExists();
         systems.AddComponent<SystemsBootstrap>();
         systems.AddComponent<LevelManager>();
         systems.AddComponent<PauseMenu>();
