@@ -38,7 +38,7 @@ public class PlayerCombat : MonoBehaviour
 
     private void Update()
     {
-        if (PauseMenu.IsPaused)
+        if (PauseMenu.IsPaused || HomeMode.IsActive)
         {
             return;
         }
@@ -137,6 +137,7 @@ public class PlayerCombat : MonoBehaviour
         renderer.sprite = MagicAttackSprites.FirstOrFallback(animationFrames, ShapeSprites.Get(equippedSpell));
         renderer.color = animationFrames.Length > 0 ? Color.white : GetSpellColor(equippedSpell);
         renderer.sortingOrder = 20;
+        SpriteLit.Apply(renderer);
 
         if (animationFrames.Length > 1)
         {
@@ -172,6 +173,7 @@ public class PlayerCombat : MonoBehaviour
         Sprite shieldSprite = MagicAttackSprites.ShieldSprite;
         renderer.sprite = shieldSprite != null ? shieldSprite : ShapeSprites.Circle;
         renderer.color = shieldSprite != null ? new Color(1f, 1f, 1f, 0.58f) : new Color(0.45f, 1f, 0.55f, 0.35f);
+        SpriteLit.Apply(renderer);
         renderer.sortingOrder = 8;
 
         CircleCollider2D collider = shieldObject.AddComponent<CircleCollider2D>();
@@ -205,6 +207,7 @@ public class PlayerCombat : MonoBehaviour
         SpriteRenderer renderer = knifeObject.AddComponent<SpriteRenderer>();
         renderer.sprite = ShapeSprites.Knife;
         renderer.color = GetSpellColor(SpellType.Knife);
+        SpriteLit.Apply(renderer);
         renderer.sortingOrder = 22;
 
         BoxCollider2D collider = knifeObject.AddComponent<BoxCollider2D>();

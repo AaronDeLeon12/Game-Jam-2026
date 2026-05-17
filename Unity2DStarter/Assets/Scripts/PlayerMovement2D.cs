@@ -108,13 +108,13 @@ public class PlayerMovement2D : MonoBehaviour
             hasDoubleJumped = false;
         }
 
-        if (JumpWasPressed() && isGrounded && !isDucking && !isBlocking)
+        if (JumpWasPressed() && isGrounded && !isDucking && !isBlocking && !HomeMode.IsActive)
         {
             jumpRequested = true;
             RecordAction("jump");
             GameAudio.PlaySfx("jumpsf", transform.position, 0.75f);
         }
-        else if (JumpWasPressed() && !isGrounded && !hasDoubleJumped && !isBlocking)
+        else if (JumpWasPressed() && !isGrounded && !hasDoubleJumped && !isBlocking && !HomeMode.IsActive)
         {
             jumpRequested = true;
             hasDoubleJumped = true;
@@ -124,7 +124,8 @@ public class PlayerMovement2D : MonoBehaviour
 
         if ((Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.RightShift))
             && Time.time >= nextDashTime
-            && !isBlocking)
+            && !isBlocking
+            && !HomeMode.IsActive)
         {
             dashRequested = true;
             RecordAction("dash");
@@ -150,6 +151,10 @@ public class PlayerMovement2D : MonoBehaviour
         wasGliding = isGliding;
         body.gravityScale = isGliding ? glideGravityScale : gravityScale;
         float currentMoveSpeed = isDucking ? moveSpeed * duckSpeedMultiplier : moveSpeed;
+        if (HomeMode.IsActive)
+        {
+            currentMoveSpeed *= HomeMode.MoveSpeedMultiplier;
+        }
 
         Vector2 velocity = body.linearVelocity;
         velocity.x = isBlocking ? 0f : horizontalInput * currentMoveSpeed;

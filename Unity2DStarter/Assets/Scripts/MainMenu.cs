@@ -7,7 +7,7 @@ using UnityEngine.SceneManagement;
 /// </summary>
 public class MainMenu : MonoBehaviour
 {
-    private const string GameSceneName = "StarterScene";
+    private const string FirstSceneName = "home_day_1";
 
     private bool showingSettings;
 
@@ -76,7 +76,9 @@ public class MainMenu : MonoBehaviour
 
     private void OnPlay()
     {
-        SceneManager.LoadScene(GameSceneName);
+        DayManager.EnsureExists();
+        DayManager.Instance.StartNewGame();
+        SceneManager.LoadScene(FirstSceneName);
     }
 
     private void OnQuit()

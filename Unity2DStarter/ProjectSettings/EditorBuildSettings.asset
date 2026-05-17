@@ -17,4 +17,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/home_day_1.unity
     guid: 64b98d7f153242d39b25ae15a1fe9db2
+  - enabled: 1
+    path: Assets/Scenes/outside_1.unity
+    guid: c362244de1f44c28947f632829cc98e8
   m_configObjects: {}
