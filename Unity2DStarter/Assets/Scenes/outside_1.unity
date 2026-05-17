@@ -607,6 +607,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Npc
   npcName: Deer
+  dailySpeeches:
+  - dialogues: []
+  - dialogues: []
+  - dialogues: []
+  - dialogues: []
   speeches: []
   promptText: Press E to talk
 --- !u!4 &288755292
@@ -636,6 +641,7 @@ GameObject:
   - component: {fileID: 435048471}
   - component: {fileID: 435048470}
   - component: {fileID: 435048473}
+  - component: {fileID: 435048474}
   m_Layer: 0
   m_Name: Wall Left
   m_TagString: Untagged
@@ -776,6 +782,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InvisibleWall
   size: {x: 1, y: 10}
+--- !u!114 &435048474
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 435048469}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e6ffdfde41e04371830a9f3edf1b6c46, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ReturnHomeDoor
+  homeScene: home_day_1
+  promptText: Press E to go back home
+  confirmQuestion: You will go back home and advance a day
+  promptOnContact: 1
 --- !u!1 &597945353
 GameObject:
   m_ObjectHideFlags: 0
@@ -1173,6 +1195,11 @@ MonoBehaviour:
   moveSpeed: 2.8
   stopDistance: 0.9
   chaseRange: 12
+  attackRange: 3
+  attackDamage: 15
+  attackDuration: 0.63
+  attackHitTime: 0.35
+  attackCooldown: 0.84
   groundLayer:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -1265,8 +1292,12 @@ MonoBehaviour:
   walkResourcePrefix: Enemies/mantis_walking/mantis_walk_
   walkFrameCount: 2
   framesPerSecond: 6
-  targetWorldHeight: 2.4
-  visualYOffset: -0.5
+  attackResourcePrefix: Enemies/mantis_walking/mantis_attack_
+  attackFrameCount: 3
+  attackScaleMultiplier: 1.2
+  targetWorldHeight: 1.8
+  visualYOffset: -0.7
+  autoAlignFeet: 1
   overlayMaxAlpha: 0.55
   flashBlinkCount: 3
   flashBlinkHalfDuration: 0.07

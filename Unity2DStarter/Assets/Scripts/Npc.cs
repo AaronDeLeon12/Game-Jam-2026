@@ -18,14 +18,30 @@ public class Speech
     public Dialogue[] dialogues;
 }
 
+/// <summary>One day's worth of conversation for the cat's story mode.</summary>
+[Serializable]
+public class DaySpeech
+{
+    public Dialogue[] dialogues;
+}
+
 /// <summary>
 /// An NPC the player talks to. Pressing E "looks for an interaction" and
 /// plays the next Speech; advancing E steps through that speech's dialogues.
-/// Speeches are played in order and loop back to the first.
+///
+/// Story mode: if <see cref="dailySpeeches"/> is filled, the line shown
+/// depends on the current day from DayManager (day 1 -> index 0, ... day 4
+/// -> index 3; clamped). Otherwise it falls back to the looping
+/// <see cref="speeches"/> list.
 /// </summary>
 public class Npc : MonoBehaviour, IInteractable
 {
+    public const int StoryDayCount = 4;
+
     [SerializeField] private string npcName = "Orpheus";
+    [Tooltip("Story mode: 4 entries, one per day (0 = Day 1 ... 3 = Day 4). " +
+             "If empty, the looping 'speeches' list below is used instead.")]
+    [SerializeField] private DaySpeech[] dailySpeeches = new DaySpeech[StoryDayCount];
     [SerializeField] private Speech[] speeches;
     [SerializeField] private string promptText = "Press E to talk";
 
@@ -34,6 +50,30 @@ public class Npc : MonoBehaviour, IInteractable
     private bool talking;
     private float inputUnlockTime;
     private PlayerMovement2D playerMovement;
+
+    // Only treat it as story mode if at least one day actually has a line,
+    // so an existing NPC that still uses 'speeches' keeps working.
+    private bool UseDailySpeeches
+    {
+        get
+        {
+            if (dailySpeeches == null) return false;
+            foreach (DaySpeech d in dailySpeeches)
+            {
+                if (d != null && d.dialogues != null && d.dialogues.Length > 0)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
+    private int CurrentStoryDay()
+    {
+        int day = DayManager.Instance != null ? DayManager.Instance.CurrentDay : 1;
+        return Mathf.Clamp(day, 1, StoryDayCount);
+    }
 
     private void Update()
     {
@@ -45,7 +85,7 @@ public class Npc : MonoBehaviour, IInteractable
 
     public void Interact()
     {
-        if (speeches == null || speeches.Length == 0)
+        if (!UseDailySpeeches && (speeches == null || speeches.Length == 0))
         {
             return;
         }
@@ -66,12 +106,33 @@ public class Npc : MonoBehaviour, IInteractable
 
     private Dialogue[] CurrentDialogues()
     {
+        if (UseDailySpeeches)
+        {
+            int idx = CurrentStoryDay() - 1;
+            DaySpeech d = idx >= 0 && idx < dailySpeeches.Length ? dailySpeeches[idx] : null;
+            return d != null && d.dialogues != null ? d.dialogues : Array.Empty<Dialogue>();
+        }
+
         Speech s = speeches[speechIndex];
         return s != null && s.dialogues != null ? s.dialogues : Array.Empty<Dialogue>();
     }
 
     private void StartSpeech()
     {
+        // Story mode: just play the current day's lines (no array to skip).
+        if (UseDailySpeeches)
+        {
+            if (CurrentDialogues().Length > 0)
+            {
+                talking = true;
+                GameModal.Open();
+                inputUnlockTime = Time.unscaledTime + 0.15f;
+                dialogueIndex = 0;
+                SetPlayerFrozen(true);
+            }
+            return;
+        }
+
         // Skip empty speeches; bail out if none have any dialogue.
         for (int tries = 0; tries < speeches.Length; tries++)
         {
@@ -94,7 +155,12 @@ public class Npc : MonoBehaviour, IInteractable
         talking = false;
         GameModal.Close();
         dialogueIndex = 0;
-        speechIndex = (speechIndex + 1) % speeches.Length; // next speech, looping
+        // Story mode: the day controls which speech plays, so don't advance
+        // an index here (talking again the same day repeats that day's lines).
+        if (!UseDailySpeeches)
+        {
+            speechIndex = (speechIndex + 1) % speeches.Length; // next speech, looping
+        }
         SetPlayerFrozen(false);
     }
 

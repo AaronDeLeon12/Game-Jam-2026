@@ -331,6 +331,7 @@ GameObject:
   - component: {fileID: 800000022}
   - component: {fileID: 800000023}
   - component: {fileID: 800000024}
+  - component: {fileID: 800000025}
   m_Layer: 0
   m_Name: Floor
   m_TagString: Untagged
@@ -470,6 +471,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c854711bda594ccab0a3d24344e131de, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GroundSurface2D
+--- !u!114 &800000025
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 800000020}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a93f635536b4df699e7d4abbb5d62aa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LoweredFloorHitbox
+  surfaceDropFraction: 0.101
 --- !u!1 &800000030
 GameObject:
   m_ObjectHideFlags: 0
@@ -792,6 +806,34 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Npc
   npcName: Orpheus
+  dailySpeeches:
+  - dialogues:
+    - text: 'Orpheus: "Hi!, you are awake, you should be tired right?"'
+    - text: 'Orpheus: "You did great, please take a well deserved rest, go outside
+        and take a walk then you can come back" '
+    - text: 'Orpheus: "You should try to check if your powers are back. try to move
+        around" '
+  - dialogues:
+    - text: 'Orpheus: "Today is a new day, and every day is good in paradise"'
+    - text: 'Orpheus: "I really hope you dont get bored, you know...."'
+    - text: 'Orpheus: "Its sunny outside, is probably gonna be sunny forever..."'
+    - text: 'Orpheus: "Never Mind"'
+    - text: 'Orpheus: "Meow"'
+  - dialogues:
+    - text: 'Orpheus: "That was weird, that thing is not supposed to be here...."'
+    - text: 'Orpheus: "Well its just one of them, for now....."'
+    - text: 'Orpheus: "You should definetely check outside for more of them."'
+    - text: 'Orpheus: "..."'
+  - dialogues:
+    - text: 'Orpheus: "So this thing is really falling apart huh?"'
+    - text: 'Orpheus: "I gueess you can not escape like you wanted to..."'
+    - text: 'Orpheus: Maybe we deserve this you know?, what we did out there...."'
+  - dialogues:
+    - text: 'Orpheus: "Guess this is the end"'
+    - text: 'Orpheus: "I am sorry"'
+    - text: 'Orpheus: "They are angry..."'
+    - text: 'Orpheus: "You destroyed it all"'
+    - text: 'Orpheus:  "I think something is outside waiting for you, be careful"'
   speeches:
   - dialogues:
     - text: 'Orpheus: Meow... '
@@ -863,7 +905,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 2
   m_MaskInteraction: 0
   m_Sprite: {fileID: 21300000, guid: 9d05adb2550f410a80862ea0d137cc1b, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
