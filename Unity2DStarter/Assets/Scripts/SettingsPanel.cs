@@ -8,42 +8,64 @@ public static class SettingsPanel
 {
     public static void Draw(Action onBack)
     {
-        GUI.Label(MenuUI.CenteredRect(70f, 900f, 90f), "SETTINGS", MenuUI.MakeLabelStyle(54));
+        // Match Title size and position with Main Menu / Pause Menu
+        GUI.Label(MenuUI.CenteredRect(100f, 1000f, 150f), "SETTINGS", MenuUI.MakeLabelStyle(60));
 
-        GUI.Label(MenuUI.CenteredRect(180f, 700f, 60f),
+        // Make the Volume Label larger
+        GUI.Label(MenuUI.CenteredRect(300f, 1000f, 150f),
             "Volume: " + Mathf.RoundToInt(GameSettings.Volume * 100f) + "%",
-            MenuUI.MakeLabelStyle(30));
+            MenuUI.MakeLabelStyle(40));
 
-        GUIStyle buttonStyle = MenuUI.MakeButtonStyle(28);
-        if (GUI.Button(MenuUI.CenteredRect(260f, 260f, 58f), "- Volume", buttonStyle))
+        // Match the button text size of the other menus
+        GUIStyle buttonStyle = MenuUI.MakeButtonStyle(35);
+        
+        // Save default color before we start tinting
+        Color originalBgColor = GUI.backgroundColor;
+
+        // --- - Volume Button : Soft Brick/Berry Red ---
+        // Slightly narrower width (440f) to indicate it's a slider-type adjustment
+        GUI.backgroundColor = new Color(0.9f, 0.5f, 0.55f);
+        if (GUI.Button(MenuUI.CenteredRect(570f, 440f, 75f), "- Volume", buttonStyle))
         {
             GameSettings.ChangeVolume(-0.1f);
             GameAudio.PlaySfx("UIpressSFX", Vector3.zero, 0.7f);
         }
 
-        if (GUI.Button(MenuUI.CenteredRect(330f, 260f, 58f), "+ Volume", buttonStyle))
+        // --- + Volume Button : Rich Forest Green ---
+        GUI.backgroundColor = new Color(0.5f, 0.85f, 0.5f);
+        if (GUI.Button(MenuUI.CenteredRect(470f, 440f, 75f), "+ Volume", buttonStyle))
         {
             GameSettings.ChangeVolume(0.1f);
             GameAudio.PlaySfx("UIpressSFX", Vector3.zero, 0.7f);
         }
 
+        // --- Fullscreen Toggle : Slate Blue/Purple ---
+        // Full width (620f) like the standard menu buttons
+        GUI.backgroundColor = new Color(0.6f, 0.65f, 0.9f);
         string fullscreenLabel = "Fullscreen: " + (GameSettings.Fullscreen ? "On" : "Off");
-        if (GUI.Button(MenuUI.CenteredRect(420f, 420f, 58f), fullscreenLabel, buttonStyle))
+        if (GUI.Button(MenuUI.CenteredRect(750f, 620f, 75f), fullscreenLabel, buttonStyle))
         {
             GameSettings.ToggleFullscreen();
             GameAudio.PlaySfx("UIpressSFX", Vector3.zero, 0.7f);
         }
 
-        if (GUI.Button(MenuUI.CenteredRect(490f, 420f, 58f), "Minimize (Windowed)", buttonStyle))
+        // --- Minimize Button : Warm Gold ---
+        GUI.backgroundColor = new Color(0.9f, 0.8f, 0.4f);
+        if (GUI.Button(MenuUI.CenteredRect(900f, 620f, 75f), "Minimize (Windowed)", buttonStyle))
         {
             GameSettings.SetWindowed();
             GameAudio.PlaySfx("UIpressSFX", Vector3.zero, 0.7f);
         }
 
-        if (GUI.Button(MenuUI.CenteredRect(590f, 360f, 62f), "Back", buttonStyle))
+        // --- Back Button : Soft Brick/Berry Red ---
+        GUI.backgroundColor = new Color(0.9f, 0.5f, 0.55f);
+        if (GUI.Button(MenuUI.CenteredRect(1200f, 620f, 75f), "Back", buttonStyle))
         {
             GameAudio.PlaySfx("UIpressSFX", Vector3.zero, 0.7f);
             onBack?.Invoke();
         }
+
+        // Restore original background color
+        GUI.backgroundColor = originalBgColor;
     }
 }

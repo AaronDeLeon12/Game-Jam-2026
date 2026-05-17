@@ -16,6 +16,7 @@ public class HomeScene : MonoBehaviour
 
         DayManager.EnsureExists();
         SystemsBootstrap.EnsureExists();
+        GameAudio.PlayMusic("MainMenuOrHouse", 0.4f);
 
         day = DayManager.Instance != null ? DayManager.Instance.CurrentDay : 1;
 

@@ -550,12 +550,25 @@ public class PlayerSpriteAnimator : MonoBehaviour
     private static Texture2D CreateTransparentTexture(Texture2D source, Color background)
     {
         Color[] pixels = source.GetPixels();
-        bool[] backgroundMask = FindEdgeBackgroundMask(source, background);
-        for (int i = 0; i < pixels.Length; i++)
+        if (HasExistingTransparency(pixels))
         {
-            if (backgroundMask[i])
+            for (int i = 0; i < pixels.Length; i++)
             {
-                pixels[i] = Color.clear;
+                if (pixels[i].a <= 0.08f)
+                {
+                    pixels[i] = Color.clear;
+                }
+            }
+        }
+        else
+        {
+            bool[] backgroundMask = FindEdgeBackgroundMask(source, background);
+            for (int i = 0; i < pixels.Length; i++)
+            {
+                if (backgroundMask[i])
+                {
+                    pixels[i] = Color.clear;
+                }
             }
         }
 
@@ -567,6 +580,19 @@ public class PlayerSpriteAnimator : MonoBehaviour
         texture.filterMode = FilterMode.Point;
         texture.wrapMode = TextureWrapMode.Clamp;
         return texture;
+    }
+
+    private static bool HasExistingTransparency(Color[] pixels)
+    {
+        for (int i = 0; i < pixels.Length; i++)
+        {
+            if (pixels[i].a < 0.95f)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static Rect FindVisibleRect(Texture2D texture, Color background)

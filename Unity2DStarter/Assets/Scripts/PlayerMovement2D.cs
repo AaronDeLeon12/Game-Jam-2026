@@ -14,8 +14,18 @@ public class PlayerMovement2D : MonoBehaviour
     [SerializeField] private float dashDistance = 3f;
     [SerializeField] private float dashDisappearTime = 0.4f;
     [SerializeField] private float dashCooldown = 1.5f;
+
+    [Header("Duck Settings")]
     [SerializeField] private float duckSpeedMultiplier = 0.5f;
     [SerializeField] private float duckHitboxHeightMultiplier = 0.5f;
+
+    [Header("Duck Visual Settings")]
+    [SerializeField] private float duckIdleVisualHeightMultiplier = 0.78f;
+    [SerializeField] private float duckIdleVisualLowerAmount = 0.25f;
+
+    [SerializeField] private float duckMoveVisualHeightMultiplier = 0.96f;
+    [SerializeField] private float duckMoveVisualLowerAmount = 0.38f;
+
     [SerializeField] private float platformDropDuration = 0.35f;
 
     private Rigidbody2D body;
@@ -25,6 +35,7 @@ public class PlayerMovement2D : MonoBehaviour
     private PlayerStats playerStats;
     private PlayerActionCounter actionCounter;
     private PlayerSpriteAnimator spriteAnimator;
+
     private float horizontalInput;
     private bool jumpRequested;
     private bool dashRequested;
@@ -34,6 +45,7 @@ public class PlayerMovement2D : MonoBehaviour
     private bool wasGliding;
     private float nextDashTime;
     private int facingDirection = 1;
+
     private Vector2 standingColliderSize;
     private Vector2 standingColliderOffset;
     private Vector2 standingSpriteSize;
@@ -53,6 +65,7 @@ public class PlayerMovement2D : MonoBehaviour
         playerStats = GetComponent<PlayerStats>();
         actionCounter = GetComponent<PlayerActionCounter>();
         spriteAnimator = GetComponent<PlayerSpriteAnimator>();
+
         body.gravityScale = gravityScale;
         body.freezeRotation = true;
 
@@ -84,7 +97,9 @@ public class PlayerMovement2D : MonoBehaviour
 
         horizontalInput = Input.GetAxisRaw("Horizontal");
         bool isGrounded = IsGrounded();
+
         UpdateDuckingState(isGrounded);
+
         bool isBlocking = playerStats != null && playerStats.IsBlocking;
 
         if (Input.GetKeyDown(KeyCode.S) && isGrounded)
@@ -145,7 +160,13 @@ public class PlayerMovement2D : MonoBehaviour
 
         bool isGrounded = IsGrounded();
         bool isBlocking = playerStats != null && playerStats.IsBlocking;
-        bool isGliding = hasDoubleJumped && !isGrounded && JumpIsHeld() && !isBlocking && body.linearVelocity.y <= 0f;
+
+        bool isGliding = hasDoubleJumped
+            && !isGrounded
+            && JumpIsHeld()
+            && !isBlocking
+            && body.linearVelocity.y <= 0f;
+
         if (isGliding && !wasGliding)
         {
             GameAudio.PlaySfx("glideSF", transform.position, 0.45f);
@@ -153,7 +174,9 @@ public class PlayerMovement2D : MonoBehaviour
 
         wasGliding = isGliding;
         body.gravityScale = isGliding ? glideGravityScale : gravityScale;
+
         float currentMoveSpeed = isDucking ? moveSpeed * duckSpeedMultiplier : moveSpeed;
+
         if (HomeMode.IsActive)
         {
             currentMoveSpeed *= HomeMode.MoveSpeedMultiplier;
@@ -228,44 +251,77 @@ public class PlayerMovement2D : MonoBehaviour
         {
             float duckHeight = standingColliderSize.y * duckHitboxHeightMultiplier;
             float heightDifference = standingColliderSize.y - duckHeight;
+
             boxCollider.size = new Vector2(standingColliderSize.x, duckHeight);
             boxCollider.offset = standingColliderOffset + Vector2.down * heightDifference * 0.5f;
 
-            if (playerRenderer != null)
-            {
-                if (HasAnimatedPlayerArt())
-                {
-                    playerRenderer.transform.localScale = standingRendererLocalScale;
-                }
-                else
-                {
-                    playerRenderer.size = new Vector2(standingSpriteSize.x, standingSpriteSize.y * duckHitboxHeightMultiplier);
-                }
-
-                playerRenderer.transform.localPosition = HasAnimatedPlayerArt()
-                    ? standingRendererLocalPosition
-                    : standingRendererLocalPosition + Vector3.down * heightDifference * 0.5f;
-            }
+            ApplyDuckVisual();
         }
         else
         {
             boxCollider.size = standingColliderSize;
             boxCollider.offset = standingColliderOffset;
-
-            if (playerRenderer != null)
-            {
-                if (HasAnimatedPlayerArt())
-                {
-                    playerRenderer.transform.localScale = standingRendererLocalScale;
-                }
-                else
-                {
-                    playerRenderer.size = standingSpriteSize;
-                }
-
-                playerRenderer.transform.localPosition = standingRendererLocalPosition;
-            }
+            RestoreStandingVisual();
         }
+    }
+
+    private void ApplyDuckVisual()
+    {
+        if (playerRenderer == null)
+        {
+            return;
+        }
+
+        bool isCrouchMoving = Mathf.Abs(horizontalInput) > 0.01f;
+
+        float currentDuckVisualHeight = isCrouchMoving
+            ? duckMoveVisualHeightMultiplier
+            : duckIdleVisualHeightMultiplier;
+
+        float currentDuckVisualLower = isCrouchMoving
+            ? duckMoveVisualLowerAmount
+            : duckIdleVisualLowerAmount;
+
+        if (HasAnimatedPlayerArt())
+        {
+            playerRenderer.transform.localScale = new Vector3(
+                standingRendererLocalScale.x,
+                standingRendererLocalScale.y * currentDuckVisualHeight,
+                standingRendererLocalScale.z
+            );
+
+            playerRenderer.transform.localPosition =
+                standingRendererLocalPosition + Vector3.down * currentDuckVisualLower;
+        }
+        else
+        {
+            playerRenderer.size = new Vector2(
+                standingSpriteSize.x,
+                standingSpriteSize.y * currentDuckVisualHeight
+            );
+
+            playerRenderer.transform.localPosition =
+                standingRendererLocalPosition + Vector3.down * currentDuckVisualLower;
+        }
+    }
+
+    private void RestoreStandingVisual()
+    {
+        if (playerRenderer == null)
+        {
+            return;
+        }
+
+        if (HasAnimatedPlayerArt())
+        {
+            playerRenderer.transform.localScale = standingRendererLocalScale;
+        }
+        else
+        {
+            playerRenderer.size = standingSpriteSize;
+        }
+
+        playerRenderer.transform.localPosition = standingRendererLocalPosition;
     }
 
     private void UpdateDuckingState(bool isGrounded)
@@ -277,7 +333,7 @@ public class PlayerMovement2D : MonoBehaviour
         {
             isDucking = true;
         }
-        else if (!wantsToDuck && (!isDucking || CanStandUp()))
+        else if (!wantsToDuck && CanStandUp())
         {
             isDucking = false;
         }
@@ -298,6 +354,7 @@ public class PlayerMovement2D : MonoBehaviour
         }
 
         playerRenderer = GetComponentInChildren<SpriteRenderer>();
+
         if (playerRenderer == null)
         {
             return;
@@ -331,15 +388,44 @@ public class PlayerMovement2D : MonoBehaviour
             return true;
         }
 
-        Vector2 center = (Vector2)transform.position + standingColliderOffset;
-        Collider2D[] hits = Physics2D.OverlapBoxAll(center, standingColliderSize * 0.95f, 0f, groundLayers);
+        Bounds currentBounds = boxCollider.bounds;
+
+        float standingTop =
+            transform.position.y + standingColliderOffset.y + standingColliderSize.y * 0.5f;
+
+        float crouchTop = currentBounds.max.y;
+        float headroomHeight = standingTop - crouchTop;
+
+        if (headroomHeight <= 0.05f)
+        {
+            return true;
+        }
+
+        Vector2 checkCenter = new Vector2(
+            transform.position.x + standingColliderOffset.x,
+            crouchTop + headroomHeight * 0.5f
+        );
+
+        Vector2 checkSize = new Vector2(
+            standingColliderSize.x * 0.85f,
+            headroomHeight * 0.9f
+        );
+
+        Collider2D[] hits = Physics2D.OverlapBoxAll(
+            checkCenter,
+            checkSize,
+            0f,
+            groundLayers
+        );
 
         foreach (Collider2D hit in hits)
         {
-            if (hit != null && hit != playerCollider && !hit.isTrigger)
+            if (hit == null || hit == playerCollider || hit.isTrigger)
             {
-                return false;
+                continue;
             }
+
+            return false;
         }
 
         return true;
@@ -351,9 +437,17 @@ public class PlayerMovement2D : MonoBehaviour
         Vector2 size = new Vector2(bounds.size.x * 0.9f, bounds.size.y * 0.6f);
         Vector2 direction = Vector2.right * facingDirection;
 
-        RaycastHit2D[] hits = Physics2D.BoxCastAll(bounds.center, size, 0f, direction, dashDistance, groundLayers);
+        RaycastHit2D[] hits = Physics2D.BoxCastAll(
+            bounds.center,
+            size,
+            0f,
+            direction,
+            dashDistance,
+            groundLayers
+        );
 
         float clamped = dashDistance;
+
         foreach (RaycastHit2D hit in hits)
         {
             if (hit.collider == null || hit.collider == playerCollider)
@@ -361,8 +455,6 @@ public class PlayerMovement2D : MonoBehaviour
                 continue;
             }
 
-            // Only Walls block a dash. Triggers, one-way platforms and any
-            // ground-flagged solid (Obstacle/Floor) can be dashed through.
             if (hit.collider.isTrigger
                 || hit.collider.GetComponent<PlatformEffector2D>() != null
                 || hit.collider.GetComponent<GroundSurface2D>() != null)
@@ -389,10 +481,12 @@ public class PlayerMovement2D : MonoBehaviour
 
         if (spriteAnimator != null)
         {
+            GameAudio.PlaySfx("teleportSF", transform.position, 0.85f);
             yield return spriteAnimator.PlayTeleportVanish(phaseDuration);
         }
         else
         {
+            GameAudio.PlaySfx("teleportSF", transform.position, 0.85f);
             yield return new WaitForSeconds(phaseDuration);
         }
 
@@ -401,10 +495,12 @@ public class PlayerMovement2D : MonoBehaviour
 
         if (spriteAnimator != null)
         {
+            GameAudio.PlaySfx("teleportSF", transform.position, 0.85f);
             yield return spriteAnimator.PlayTeleportAppear(phaseDuration);
         }
         else
         {
+            GameAudio.PlaySfx("teleportSF", transform.position, 0.85f);
             yield return new WaitForSeconds(phaseDuration);
         }
 
@@ -416,6 +512,7 @@ public class PlayerMovement2D : MonoBehaviour
         Bounds bounds = playerCollider.bounds;
         Vector2 origin = new Vector2(bounds.center.x, bounds.min.y - 0.04f);
         Vector2 size = new Vector2(bounds.size.x * 0.85f, 0.08f);
+
         Collider2D[] hits = Physics2D.OverlapBoxAll(origin, size, 0f, groundLayers);
 
         foreach (Collider2D hit in hits)
@@ -439,6 +536,7 @@ public class PlayerMovement2D : MonoBehaviour
         yield return new WaitForSeconds(platformDropDuration);
 
         float timeout = Time.time + 1f;
+
         while (platform != null
             && Time.time < timeout
             && playerCollider.bounds.min.y < platform.bounds.max.y)
@@ -457,6 +555,7 @@ public class PlayerMovement2D : MonoBehaviour
         Bounds bounds = playerCollider.bounds;
         Vector2 origin = new Vector2(bounds.center.x, bounds.min.y - 0.04f);
         Vector2 size = new Vector2(bounds.size.x * 0.85f, 0.08f);
+
         Collider2D[] hits = Physics2D.OverlapBoxAll(origin, size, 0f, groundLayers);
 
         foreach (Collider2D hit in hits)
@@ -464,6 +563,7 @@ public class PlayerMovement2D : MonoBehaviour
             if (hit != null && hit != playerCollider)
             {
                 GroundSurface2D groundSurface = hit.GetComponent<GroundSurface2D>();
+
                 if (groundSurface != null && bounds.min.y >= hit.bounds.max.y - 0.12f)
                 {
                     return true;
