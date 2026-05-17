@@ -10,10 +10,7 @@ public class PauseMenu : MonoBehaviour
 {
     public static bool IsPaused { get; private set; }
 
-    private GameObject canvasRoot;
-    private GameObject mainPanel;
-    private SettingsPanel settings;
-    private bool built;
+    private bool showingSettings;
 
     private void Update()
     {
@@ -34,23 +31,10 @@ public class PauseMenu : MonoBehaviour
     {
         GameAudio.PlaySfx("pauseSFX", transform.position, 0.75f);
 
-        // The canvas is a scene object; if the level changed it was destroyed
-        // while this persistent component survived, so rebuild when needed.
-        if (canvasRoot == null)
-        {
-            built = false;
-        }
-
-        if (!built)
-        {
-            Build();
-        }
-
         IsPaused = true;
         Time.timeScale = 0f;
         AudioListener.pause = true;
-        canvasRoot.SetActive(true);
-        ShowSettings(false);
+        showingSettings = false;
     }
 
     private void Resume()
@@ -61,10 +45,7 @@ public class PauseMenu : MonoBehaviour
         Time.timeScale = 1f;
         AudioListener.pause = false;
 
-        if (canvasRoot != null)
-        {
-            canvasRoot.SetActive(false);
-        }
+        showingSettings = false;
     }
 
     private void GoToMainMenu()
@@ -92,39 +73,60 @@ public class PauseMenu : MonoBehaviour
 #endif
     }
 
-    private void Build()
+private void OnGUI()
     {
-        MenuUI.EnsureEventSystem();
-
-        Canvas canvas = MenuUI.CreateCanvas("Pause Canvas", 200);
-        canvasRoot = canvas.gameObject;
-
-        MenuUI.CreateStretchPanel(canvasRoot.transform, "Dim", new Color(0f, 0f, 0f, 0.65f));
-
-        mainPanel = MenuUI.CreateStretch(canvasRoot.transform, "Pause Panel");
-        MenuUI.CreateLabel(mainPanel.transform, "PAUSED", new Vector2(0f, 320f), new Vector2(1000f, 180f), 90);
-        MenuUI.CreateButton(mainPanel.transform, "Resume", new Vector2(0f, 130f), Resume);
-        MenuUI.CreateButton(mainPanel.transform, "Settings", new Vector2(0f, 0f), () => ShowSettings(true));
-        MenuUI.CreateButton(mainPanel.transform, "Main Menu", new Vector2(0f, -130f), GoToMainMenu);
-        MenuUI.CreateButton(mainPanel.transform, "Quit", new Vector2(0f, -260f), QuitGame);
-
-        settings = SettingsPanel.Create(canvasRoot.transform, () => ShowSettings(false));
-        built = true;
-    }
-
-    private void ShowSettings(bool show)
-    {
-        if (settings != null)
+        if (!IsPaused)
         {
-            settings.Show(show);
+            return;
         }
 
-        if (mainPanel != null)
-        {
-            mainPanel.SetActive(!show);
-        }
-    }
+        GUI.color = new Color(0f, 0f, 0f, 0.65f);
+        GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Texture2D.whiteTexture);
+        GUI.color = Color.white;
 
+        if (showingSettings)
+        {
+            SettingsPanel.Draw(() => showingSettings = false);
+            return;
+        }
+
+        GUI.Label(MenuUI.CenteredRect(80f, 800f, 100f), "PAUSED", MenuUI.MakeLabelStyle(60));
+        
+        GUIStyle buttonStyle = MenuUI.MakeButtonStyle(35);
+        Color originalBgColor = GUI.backgroundColor;
+
+        // --- Resume Button : Rich Forest Green ---
+        // Boosted brightness so the default gray texture doesn't kill it
+        GUI.backgroundColor = new Color(0.5f, 0.85f, 0.5f); 
+        if (GUI.Button(MenuUI.CenteredRect(440f, 620f, 75f), "Resume", buttonStyle))
+        {
+            Resume();
+        }
+
+        // --- Settings Button : Warm Gold ---
+        GUI.backgroundColor = new Color(0.9f, 0.8f, 0.4f); 
+        if (GUI.Button(MenuUI.CenteredRect(590f, 620f, 75f), "Settings", buttonStyle))
+        {
+            GameAudio.PlaySfx("UIpressSFX", Vector3.zero, 0.7f);
+            showingSettings = true;
+        }
+
+        // --- Main Menu Button : Soft Brick/Berry Red ---
+        GUI.backgroundColor = new Color(0.9f, 0.5f, 0.55f); 
+        if (GUI.Button(MenuUI.CenteredRect(740f, 620f, 75f), "Main Menu", buttonStyle))
+        {
+            GoToMainMenu();
+        }
+
+        // --- Quit Button : Slate Blue/Purple ---
+        GUI.backgroundColor = new Color(0.6f, 0.65f, 0.9f); 
+        if (GUI.Button(MenuUI.CenteredRect(890f, 620f, 75f), "Quit to Desktop", buttonStyle))
+        {
+            QuitGame();
+        }
+
+        GUI.backgroundColor = originalBgColor;
+    }
     private void OnDestroy()
     {
         // Safety: never leave the game frozen if this gets torn down.

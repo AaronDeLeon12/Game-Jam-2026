@@ -59,6 +59,7 @@ public class DialogueBox : MonoBehaviour
 
         GUIStyle textStyle = new GUIStyle(GUI.skin.label);
         textStyle.fontSize = Mathf.RoundToInt(Screen.height * 0.03f);
+        textStyle.font = MenuUI.GameFont;
         textStyle.normal.textColor = Color.white;
         textStyle.wordWrap = true;
         textStyle.padding = new RectOffset(30, 30, 20, 20);
@@ -68,6 +69,7 @@ public class DialogueBox : MonoBehaviour
 
         GUIStyle hintStyle = new GUIStyle(GUI.skin.label);
         hintStyle.fontSize = Mathf.RoundToInt(Screen.height * 0.02f);
+        hintStyle.font = MenuUI.GameFont;
         hintStyle.normal.textColor = new Color(0.6f, 0.6f, 0.6f, 1f);
         hintStyle.alignment = TextAnchor.LowerRight;
         hintStyle.padding = new RectOffset(10, 16, 0, 10);

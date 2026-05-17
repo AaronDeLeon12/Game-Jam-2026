@@ -30,6 +30,7 @@ public class GameHud : MonoBehaviour
         GUIStyle labelStyle = new GUIStyle(GUI.skin.label)
         {
             fontSize = 16,
+            font = MenuUI.GameFont,
             normal = { textColor = Color.white }
         };
 
@@ -45,6 +46,7 @@ public class GameHud : MonoBehaviour
             {
                 alignment = TextAnchor.MiddleCenter,
                 fontSize = 36,
+                font = MenuUI.GameFont,
                 normal = { textColor = Color.white }
             };
 

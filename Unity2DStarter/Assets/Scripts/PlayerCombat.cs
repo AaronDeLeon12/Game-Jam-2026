@@ -129,11 +129,19 @@ public class PlayerCombat : MonoBehaviour
 
         GameObject projectile = new GameObject("Spell Projectile");
         projectile.transform.position = spawnPosition;
-        projectile.transform.localScale = Vector3.one;
+        projectile.transform.localScale = new Vector3(direction > 0 ? -1f : 1f, 1f, 1f);
         SpriteRenderer renderer = projectile.AddComponent<SpriteRenderer>();
-        renderer.sprite = ShapeSprites.Get(equippedSpell);
-        renderer.color = GetSpellColor(equippedSpell);
+        Sprite[] animationFrames = equippedSpell == SpellType.Triangle
+            ? MagicAttackSprites.TriangleFrames
+            : MagicAttackSprites.SquareFrames;
+        renderer.sprite = MagicAttackSprites.FirstOrFallback(animationFrames, ShapeSprites.Get(equippedSpell));
+        renderer.color = animationFrames.Length > 0 ? Color.white : GetSpellColor(equippedSpell);
         renderer.sortingOrder = 20;
+
+        if (animationFrames.Length > 1)
+        {
+            projectile.AddComponent<AnimatedSprite2D>().Play(animationFrames, 14f);
+        }
 
         BoxCollider2D collider = projectile.AddComponent<BoxCollider2D>();
         collider.isTrigger = true;
@@ -158,12 +166,13 @@ public class PlayerCombat : MonoBehaviour
         GameObject shieldObject = new GameObject("Circle Shield");
         shieldObject.transform.SetParent(transform, false);
         shieldObject.transform.localPosition = Vector3.zero;
-        shieldObject.transform.localScale = new Vector3(circleShieldScale, circleShieldScale, 1f);
+        shieldObject.transform.localScale = new Vector3(circleShieldScale * 0.62f, circleShieldScale * 0.62f, 1f);
 
         SpriteRenderer renderer = shieldObject.AddComponent<SpriteRenderer>();
-        renderer.sprite = ShapeSprites.Circle;
-        renderer.color = new Color(0.45f, 1f, 0.55f, 0.35f);
-        renderer.sortingOrder = 15;
+        Sprite shieldSprite = MagicAttackSprites.ShieldSprite;
+        renderer.sprite = shieldSprite != null ? shieldSprite : ShapeSprites.Circle;
+        renderer.color = shieldSprite != null ? new Color(1f, 1f, 1f, 0.58f) : new Color(0.45f, 1f, 0.55f, 0.35f);
+        renderer.sortingOrder = 8;
 
         CircleCollider2D collider = shieldObject.AddComponent<CircleCollider2D>();
         collider.isTrigger = false;

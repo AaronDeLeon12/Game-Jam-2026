@@ -107,13 +107,15 @@ public class SystemsBootstrap : MonoBehaviour
         collider.sharedMaterial = frictionless;
         body.sharedMaterial = frictionless;
 
+        PlayerSpriteAnimator spriteAnimator = GetOrAdd<PlayerSpriteAnimator>(Player);
+        spriteAnimator.ForceRefresh();
+        PlayerStats = GetOrAdd<PlayerStats>(Player);
+        GetOrAdd<PlayerActionCounter>(Player);
+
         if (Player.GetComponent<PlayerMovement2D>() == null)
         {
             Player.AddComponent<PlayerMovement2D>();
         }
-
-        PlayerStats = GetOrAdd<PlayerStats>(Player);
-        GetOrAdd<PlayerActionCounter>(Player);
 
         if (Player.GetComponent<PlayerCombat>() == null)
         {
@@ -180,7 +182,32 @@ public class SystemsBootstrap : MonoBehaviour
 
         visual.localPosition = Vector3.zero;
         visual.localScale = Vector3.one;
-        PlaceholderSprites.MakeSquare(visual.gameObject, new Color(0.95f, 0.95f, 0.95f), 10);
+
+        SpriteRenderer renderer = visual.GetComponent<SpriteRenderer>();
+        if (renderer == null)
+        {
+            renderer = visual.gameObject.AddComponent<SpriteRenderer>();
+        }
+
+        Sprite idleSprite = PlayerSpriteAnimator.LoadWalkSprite(1);
+        if (idleSprite != null)
+        {
+            renderer.sprite = idleSprite;
+            renderer.color = Color.white;
+            renderer.drawMode = SpriteDrawMode.Simple;
+            renderer.sortingOrder = 10;
+
+            float spriteHeight = idleSprite.bounds.size.y;
+            if (spriteHeight > 0f)
+            {
+                float scale = 1.45f / spriteHeight;
+                visual.localScale = new Vector3(scale, scale, 1f);
+            }
+        }
+        else
+        {
+            PlaceholderSprites.MakeSquare(visual.gameObject, new Color(0.95f, 0.95f, 0.95f), 10);
+        }
     }
 
     private static T GetOrAdd<T>(GameObject owner) where T : Component

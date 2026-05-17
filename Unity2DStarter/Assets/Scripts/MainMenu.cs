@@ -9,17 +9,54 @@ public class MainMenu : MonoBehaviour
 {
     private const string GameSceneName = "StarterScene";
 
-    private GameObject mainPanel;
-    private SettingsPanel settings;
+    private bool showingSettings;
 
     private void Awake()
     {
         GameSettings.Load();
 
-        MenuUI.EnsureEventSystem();
         EnsureCamera();
         SetupMusic();
-        BuildUI();
+    }
+
+    private void OnGUI()
+    {
+        GUI.color = Color.white;
+        GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Texture2D.whiteTexture);
+        GUI.color = new Color(0.06f, 0.07f, 0.1f, 1f);
+        GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Texture2D.whiteTexture);
+        GUI.color = Color.white;
+
+        if (showingSettings)
+        {
+            SettingsPanel.Draw(() => showingSettings = false);
+            return;
+        }
+
+        GUI.Label(MenuUI.CenteredRect(80f, 900f, 120f), "TITLE", MenuUI.MakeLabelStyle(72));
+        GUIStyle buttonStyle = MenuUI.MakeButtonStyle(32);
+        if (GUI.Button(MenuUI.CenteredRect(250f, 420f, 70f), "Play", buttonStyle))
+        {
+            GameAudio.PlaySfx("UIpressSFX", Vector3.zero, 0.7f);
+            OnPlay();
+        }
+
+        if (GUI.Button(MenuUI.CenteredRect(340f, 420f, 70f), "Settings", buttonStyle))
+        {
+            GameAudio.PlaySfx("UIpressSFX", Vector3.zero, 0.7f);
+            showingSettings = true;
+        }
+
+        if (GUI.Button(MenuUI.CenteredRect(430f, 420f, 70f), "Quit", buttonStyle))
+        {
+            GameAudio.PlaySfx("UIpressSFX", Vector3.zero, 0.7f);
+            OnQuit();
+        }
+    }
+
+    private void SetupMusic()
+    {
+        GameAudio.PlayMusic("MainMenu", 0.45f);
     }
 
     private static void EnsureCamera()
@@ -35,39 +72,6 @@ public class MainMenu : MonoBehaviour
         cam.backgroundColor = new Color(0.07f, 0.08f, 0.11f);
         cam.orthographic = true;
         camObj.AddComponent<AudioListener>();
-    }
-
-    private void BuildUI()
-    {
-        Canvas canvas = MenuUI.CreateCanvas("Menu Canvas", 100);
-        MenuUI.CreateStretchPanel(canvas.transform, "Background", new Color(0.06f, 0.07f, 0.1f, 1f));
-
-        mainPanel = MenuUI.CreateStretch(canvas.transform, "Main Panel");
-        MenuUI.CreateLabel(mainPanel.transform, "TITLE", new Vector2(0f, 360f), new Vector2(1200f, 200f), 110);
-        MenuUI.CreateButton(mainPanel.transform, "Play", new Vector2(0f, 150f), OnPlay);
-        MenuUI.CreateButton(mainPanel.transform, "Settings", new Vector2(0f, 0f), () => ShowSettings(true));
-        MenuUI.CreateButton(mainPanel.transform, "Quit", new Vector2(0f, -150f), OnQuit);
-
-        settings = SettingsPanel.Create(canvas.transform, () => ShowSettings(false));
-        ShowSettings(false);
-    }
-
-    private void SetupMusic()
-    {
-        GameAudio.PlayMusic("MainMenu", 0.45f);
-    }
-
-    private void ShowSettings(bool show)
-    {
-        if (settings != null)
-        {
-            settings.Show(show);
-        }
-
-        if (mainPanel != null)
-        {
-            mainPanel.SetActive(!show);
-        }
     }
 
     private void OnPlay()

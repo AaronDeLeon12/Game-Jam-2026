@@ -4,7 +4,7 @@ public class SpriteImportSettings : AssetPostprocessor
 {
     private void OnPreprocessTexture()
     {
-        if (!assetPath.StartsWith("Assets/Art/"))
+        if (!assetPath.StartsWith("Assets/Art/") && !assetPath.StartsWith("Assets/Resources/Player/"))
         {
             return;
         }
@@ -16,5 +16,6 @@ public class SpriteImportSettings : AssetPostprocessor
         importer.filterMode = UnityEngine.FilterMode.Point;
         importer.textureCompression = TextureImporterCompression.Uncompressed;
         importer.mipmapEnabled = false;
+        importer.isReadable = assetPath.StartsWith("Assets/Resources/Player/");
     }
 }

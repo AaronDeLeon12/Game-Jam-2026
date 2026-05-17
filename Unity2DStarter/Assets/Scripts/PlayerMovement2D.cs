@@ -37,6 +37,7 @@ public class PlayerMovement2D : MonoBehaviour
     private Vector2 standingColliderOffset;
     private Vector2 standingSpriteSize;
     private Vector3 standingRendererLocalPosition;
+    private Vector3 standingRendererLocalScale;
 
     public int FacingDirection => facingDirection;
     public bool IsDucking => isDucking;
@@ -60,9 +61,14 @@ public class PlayerMovement2D : MonoBehaviour
 
         if (playerRenderer != null)
         {
-            playerRenderer.drawMode = SpriteDrawMode.Sliced;
+            if (!HasAnimatedPlayerArt())
+            {
+                playerRenderer.drawMode = SpriteDrawMode.Sliced;
+            }
+
             standingSpriteSize = playerRenderer.size;
             standingRendererLocalPosition = playerRenderer.transform.localPosition;
+            standingRendererLocalScale = playerRenderer.transform.localScale;
         }
     }
 
@@ -219,7 +225,18 @@ public class PlayerMovement2D : MonoBehaviour
 
             if (playerRenderer != null)
             {
-                playerRenderer.size = new Vector2(standingSpriteSize.x, standingSpriteSize.y * duckHitboxHeightMultiplier);
+                if (HasAnimatedPlayerArt())
+                {
+                    playerRenderer.transform.localScale = new Vector3(
+                        standingRendererLocalScale.x,
+                        standingRendererLocalScale.y * duckHitboxHeightMultiplier,
+                        standingRendererLocalScale.z);
+                }
+                else
+                {
+                    playerRenderer.size = new Vector2(standingSpriteSize.x, standingSpriteSize.y * duckHitboxHeightMultiplier);
+                }
+
                 playerRenderer.transform.localPosition = standingRendererLocalPosition + Vector3.down * heightDifference * 0.5f;
             }
         }
@@ -230,7 +247,15 @@ public class PlayerMovement2D : MonoBehaviour
 
             if (playerRenderer != null)
             {
-                playerRenderer.size = standingSpriteSize;
+                if (HasAnimatedPlayerArt())
+                {
+                    playerRenderer.transform.localScale = standingRendererLocalScale;
+                }
+                else
+                {
+                    playerRenderer.size = standingSpriteSize;
+                }
+
                 playerRenderer.transform.localPosition = standingRendererLocalPosition;
             }
         }
@@ -271,9 +296,20 @@ public class PlayerMovement2D : MonoBehaviour
             return;
         }
 
-        playerRenderer.drawMode = SpriteDrawMode.Sliced;
+        if (!HasAnimatedPlayerArt())
+        {
+            playerRenderer.drawMode = SpriteDrawMode.Sliced;
+        }
+
         standingSpriteSize = playerRenderer.size;
         standingRendererLocalPosition = playerRenderer.transform.localPosition;
+        standingRendererLocalScale = playerRenderer.transform.localScale;
+    }
+
+    private bool HasAnimatedPlayerArt()
+    {
+        PlayerSpriteAnimator animator = GetComponent<PlayerSpriteAnimator>();
+        return animator != null && animator.HasLoadedSprites;
     }
 
     private bool IsNearlyStill()
