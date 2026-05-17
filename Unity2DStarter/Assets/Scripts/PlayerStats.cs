@@ -228,6 +228,14 @@ public class PlayerStats : MonoBehaviour
         }
 
         isDead = true;
+        GameModal.Open();
+
+        Rigidbody2D body = GetComponent<Rigidbody2D>();
+        if (body != null)
+        {
+            body.linearVelocity = Vector2.zero;
+        }
+
         PlayerSpriteAnimator animator = GetComponent<PlayerSpriteAnimator>();
         if (animator != null)
         {

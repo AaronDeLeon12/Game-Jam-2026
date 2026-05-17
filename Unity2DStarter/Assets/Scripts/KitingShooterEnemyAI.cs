@@ -41,7 +41,7 @@ public class KitingShooterEnemyAI : MonoBehaviour
             animator = gameObject.AddComponent<ResourceSheetAnimator2D>();
         }
 
-        animator.Configure("Enemies/UnicornSpriteCycle", 4, 3, 8f, true, 0, 256f, 10);
+        animator.Configure("Enemies/unicornAttackCycleUpdate", 4, 3, 8f, true, true, 0, 256f, 10);
     }
 
     private void Update()

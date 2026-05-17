@@ -84,6 +84,155 @@ public static class RuntimeSpriteCropper
         return frames.ToArray();
     }
 
+    public static Sprite[] LoadNormalizedGridFrames(string resourcePath, int columns, int rows, float pixelsPerUnit = 256f, int padding = 6, int ignoreLastFrames = 0, int bottomPadding = 8)
+    {
+        Texture2D sheet = Resources.Load<Texture2D>(resourcePath);
+        if (sheet == null || columns <= 0 || rows <= 0)
+        {
+            return new Sprite[0];
+        }
+
+        List<Sprite> frames = new List<Sprite>();
+        int frameWidth = sheet.width / columns;
+        int frameHeight = sheet.height / rows;
+        int totalCells = Mathf.Max(0, columns * rows - Mathf.Max(0, ignoreLastFrames));
+
+        for (int index = 0; index < totalCells; index++)
+        {
+            int row = index / columns;
+            int col = index % columns;
+            int x = col * frameWidth;
+            int y = sheet.height - (row + 1) * frameHeight;
+
+            Texture2D frame = new Texture2D(frameWidth, frameHeight, TextureFormat.RGBA32, false);
+            frame.SetPixels(sheet.GetPixels(x, y, frameWidth, frameHeight));
+            frame.Apply(false, false);
+
+            Texture2D transparent = MakeTransparent(frame);
+            Rect crop = FindVisibleRect(transparent, padding);
+            if (crop.width <= 4f || crop.height <= 4f)
+            {
+                continue;
+            }
+
+            frames.Add(CreateBottomCenteredSprite(transparent, crop, frameWidth, frameHeight, pixelsPerUnit, bottomPadding));
+        }
+
+        return frames.ToArray();
+    }
+
+    public static Sprite[] LoadNormalizedFrameFiles(string folderPath, string[] frameNames, float pixelsPerUnit = 256f, int padding = 6, int bottomPadding = 8)
+    {
+        if (frameNames == null || frameNames.Length == 0)
+        {
+            return new Sprite[0];
+        }
+
+        List<Texture2D> textures = new List<Texture2D>();
+        int canvasWidth = 0;
+        int canvasHeight = 0;
+
+        for (int i = 0; i < frameNames.Length; i++)
+        {
+            Texture2D source = Resources.Load<Texture2D>(folderPath + "/" + frameNames[i]);
+            if (source == null)
+            {
+                continue;
+            }
+
+            textures.Add(source);
+            canvasWidth = Mathf.Max(canvasWidth, source.width);
+            canvasHeight = Mathf.Max(canvasHeight, source.height);
+        }
+
+        if (textures.Count == 0 || canvasWidth <= 0 || canvasHeight <= 0)
+        {
+            return new Sprite[0];
+        }
+
+        List<Sprite> frames = new List<Sprite>();
+        for (int i = 0; i < textures.Count; i++)
+        {
+            Texture2D transparent = MakeTransparent(textures[i]);
+            Rect crop = FindVisibleRect(transparent, padding);
+            if (crop.width <= 4f || crop.height <= 4f)
+            {
+                continue;
+            }
+
+            frames.Add(CreateBottomCenteredSprite(transparent, crop, canvasWidth, canvasHeight, pixelsPerUnit, bottomPadding));
+        }
+
+        return frames.ToArray();
+    }
+
+    private static Sprite CreateBottomCenteredSprite(Texture2D source, Rect crop, int canvasWidth, int canvasHeight, float pixelsPerUnit, int bottomPadding)
+    {
+        Texture2D normalized = new Texture2D(canvasWidth, canvasHeight, TextureFormat.RGBA32, false);
+        Color[] blank = new Color[canvasWidth * canvasHeight];
+        for (int i = 0; i < blank.Length; i++)
+        {
+            blank[i] = Color.clear;
+        }
+
+        normalized.SetPixels(blank);
+
+        int cropX = Mathf.RoundToInt(crop.x);
+        int cropY = Mathf.RoundToInt(crop.y);
+        int cropW = Mathf.RoundToInt(crop.width);
+        int cropH = Mathf.RoundToInt(crop.height);
+        int destX = Mathf.Clamp((canvasWidth - cropW) / 2, 0, Mathf.Max(0, canvasWidth - cropW));
+        int destY = Mathf.Clamp(bottomPadding, 0, Mathf.Max(0, canvasHeight - cropH));
+        normalized.SetPixels(destX, destY, cropW, cropH, source.GetPixels(cropX, cropY, cropW, cropH));
+        normalized.Apply(false, false);
+        normalized.filterMode = FilterMode.Bilinear;
+        normalized.wrapMode = TextureWrapMode.Clamp;
+
+        return Sprite.Create(normalized, new Rect(0f, 0f, canvasWidth, canvasHeight), new Vector2(0.5f, 0.5f), pixelsPerUnit);
+    }
+
+    public static Sprite[] LoadAnchoredGridFrames(string resourcePath, int columns, int rows, Vector2 normalizedPivot, float pixelsPerUnit = 256f, int padding = 6, int ignoreLastFrames = 0)
+    {
+        Texture2D sheet = Resources.Load<Texture2D>(resourcePath);
+        if (sheet == null || columns <= 0 || rows <= 0)
+        {
+            return new Sprite[0];
+        }
+
+        List<Sprite> frames = new List<Sprite>();
+        int frameWidth = sheet.width / columns;
+        int frameHeight = sheet.height / rows;
+        int totalCells = Mathf.Max(0, columns * rows - Mathf.Max(0, ignoreLastFrames));
+
+        for (int index = 0; index < totalCells; index++)
+        {
+            int row = index / columns;
+            int col = index % columns;
+            int x = col * frameWidth;
+            int y = sheet.height - (row + 1) * frameHeight;
+
+            Texture2D frame = new Texture2D(frameWidth, frameHeight, TextureFormat.RGBA32, false);
+            frame.SetPixels(sheet.GetPixels(x, y, frameWidth, frameHeight));
+            frame.Apply(false, false);
+
+            Texture2D transparent = MakeTransparent(frame);
+            Rect crop = FindVisibleRect(transparent, padding);
+            Vector2 pivotPixel = new Vector2(
+                frameWidth * Mathf.Clamp01(normalizedPivot.x) - crop.x,
+                frameHeight * Mathf.Clamp01(normalizedPivot.y) - crop.y);
+            Vector2 spritePivot = new Vector2(
+                crop.width > 0f ? pivotPixel.x / crop.width : 0.5f,
+                crop.height > 0f ? pivotPixel.y / crop.height : 0.5f);
+
+            if (crop.width > 4f && crop.height > 4f)
+            {
+                frames.Add(Sprite.Create(transparent, crop, spritePivot, pixelsPerUnit));
+            }
+        }
+
+        return frames.ToArray();
+    }
+
     private static Texture2D MakeTransparent(Texture2D source)
     {
         Color background = source.GetPixel(2, source.height - 2);

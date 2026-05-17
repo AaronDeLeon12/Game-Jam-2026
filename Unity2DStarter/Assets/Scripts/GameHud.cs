@@ -1,17 +1,21 @@
-using System.Collections.Generic;
+using System.Collections;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class GameHud : MonoBehaviour
 {
     [SerializeField] private PlayerStats playerStats;
     private PlayerCombat playerCombat;
-    private Texture2D healthUiTexture;
+    private Texture2D healthFrameTexture;
+    private Texture2D manaFrameTexture;
     private float lastHealth = -1f;
     private float flashHealth;
     private float healthFlashTimer;
     private float lastMana = -1f;
     private float flashMana;
     private float manaFlashTimer;
+    private bool showingLoadSlots;
+    private bool returningToMainMenu;
     private const float HealthFlashDuration = 0.75f;
 
     public void SetPlayerStats(PlayerStats stats)
@@ -44,21 +48,14 @@ public class GameHud : MonoBehaviour
         float hudAlpha = PauseMenu.IsPaused ? 0.3f : 1f;
         UpdateResourceFlashes();
 
-        DrawFramedResourceBar(new Rect(18f, 12f, 430f, 143f), playerStats.Health, playerStats.MaxHealth, flashHealth, healthFlashTimer, Color.red, hudAlpha);
-        DrawFramedResourceBar(new Rect(18f, 88f, 430f, 143f), playerStats.Mana, playerStats.MaxMana, flashMana, manaFlashTimer, Color.blue, hudAlpha);
-        DrawEquippedSpell(new Rect(476f, 68f, 72f, 72f), hudAlpha);
+        DrawFramedResourceBar(new Rect(18f, 8f, 390f, 130f), healthFrameTexture, "UI/HealthBarUI", playerStats.Health, playerStats.MaxHealth, flashHealth, healthFlashTimer, Color.red, hudAlpha);
+        DrawFramedResourceBar(new Rect(18f, 152f, 390f, 130f), manaFrameTexture, "UI/ManaBarUI", playerStats.Mana, playerStats.MaxMana, flashMana, manaFlashTimer, Color.blue, hudAlpha);
+        DrawEquippedSpell(new Rect(430f, 100f, 72f, 72f), hudAlpha);
 
         if (playerStats.IsDead)
         {
-            GUIStyle style = new GUIStyle(GUI.skin.label)
-            {
-                alignment = TextAnchor.MiddleCenter,
-                fontSize = 36,
-                font = MenuUI.GameFont,
-                normal = { textColor = Color.white }
-            };
-
-            GUI.Label(new Rect(0f, 0f, Screen.width, Screen.height), "GAME OVER", style);
+            GameModal.Open();
+            DrawDeathMenu();
         }
     }
 
@@ -74,29 +71,34 @@ public class GameHud : MonoBehaviour
         GUI.color = Color.white;
     }
 
-    private void DrawFramedResourceBar(Rect frameRect, float value, float maxValue, float flashValue, float flashTimer, Color fillColor, float alpha)
+    private void DrawFramedResourceBar(Rect frameRect, Texture2D frameTexture, string resourcePath, float value, float maxValue, float flashValue, float flashTimer, Color fillColor, float alpha)
     {
-        EnsureHealthUiTexture();
+        frameTexture = EnsureFrameTexture(frameTexture, resourcePath);
+        if (resourcePath.EndsWith("HealthBarUI"))
+        {
+            healthFrameTexture = frameTexture;
+        }
+        else
+        {
+            manaFrameTexture = frameTexture;
+        }
 
         Rect fillRect = new Rect(
             frameRect.x + frameRect.width * 0.22f,
-            frameRect.y + frameRect.height * 0.39f,
-            frameRect.width * 0.68f,
-            frameRect.height * 0.18f);
-
-        GUI.color = new Color(0f, 0f, 0f, alpha * 0.9f);
-        GUI.DrawTexture(fillRect, Texture2D.whiteTexture);
+            frameRect.y + frameRect.height * 0.42f,
+            frameRect.width * 0.64f,
+            frameRect.height * 0.105f);
 
         float percent = maxValue > 0f ? Mathf.Clamp01(value / maxValue) : 0f;
-        GUI.color = new Color(fillColor.r, fillColor.g, fillColor.b, alpha);
-        GUI.DrawTexture(new Rect(fillRect.x + 2f, fillRect.y + 2f, (fillRect.width - 4f) * percent, fillRect.height - 4f), Texture2D.whiteTexture);
+        GUI.color = new Color(fillColor.r, fillColor.g, fillColor.b, alpha * 0.92f);
+        GUI.DrawTexture(new Rect(fillRect.x, fillRect.y, fillRect.width * percent, fillRect.height), Texture2D.whiteTexture);
 
         DrawResourceSpendFlash(fillRect, value, maxValue, flashValue, flashTimer, alpha);
 
-        if (healthUiTexture != null)
+        if (frameTexture != null)
         {
             GUI.color = new Color(1f, 1f, 1f, alpha);
-            GUI.DrawTexture(frameRect, healthUiTexture, ScaleMode.StretchToFill, true);
+            GUI.DrawTexture(frameRect, frameTexture, ScaleMode.StretchToFill, true);
         }
 
         GUI.color = Color.white;
@@ -178,26 +180,23 @@ public class GameHud : MonoBehaviour
         }
     }
 
-    private void EnsureHealthUiTexture()
+    private static Texture2D EnsureFrameTexture(Texture2D cached, string resourcePath)
     {
-        if (healthUiTexture == null)
+        if (cached != null)
         {
-            Texture2D source = Resources.Load<Texture2D>("UI/HealthBarUI");
-            if (source != null)
-            {
-                healthUiTexture = CreateTransparentFrameTexture(source);
-            }
+            return cached;
         }
+
+        Texture2D source = Resources.Load<Texture2D>(resourcePath);
+        return source != null ? CreateTransparentFrameTexture(source) : null;
     }
 
     private static Texture2D CreateTransparentFrameTexture(Texture2D source)
     {
         Color[] pixels = source.GetPixels();
-        bool[] background = FindUiBackgroundMask(source, pixels);
-
         for (int i = 0; i < pixels.Length; i++)
         {
-            if (background[i])
+            if (IsUiBackground(pixels[i]))
             {
                 pixels[i] = Color.clear;
             }
@@ -211,60 +210,123 @@ public class GameHud : MonoBehaviour
         return texture;
     }
 
-    private static bool[] FindUiBackgroundMask(Texture2D texture, Color[] pixels)
-    {
-        bool[] visited = new bool[pixels.Length];
-        Queue<int> queue = new Queue<int>();
-
-        void TryEnqueue(int x, int y)
-        {
-            if (x < 0 || x >= texture.width || y < 0 || y >= texture.height)
-            {
-                return;
-            }
-
-            int index = y * texture.width + x;
-            if (visited[index] || !IsUiBackground(pixels[index]))
-            {
-                return;
-            }
-
-            visited[index] = true;
-            queue.Enqueue(index);
-        }
-
-        for (int x = 0; x < texture.width; x++)
-        {
-            TryEnqueue(x, 0);
-            TryEnqueue(x, texture.height - 1);
-        }
-
-        for (int y = 0; y < texture.height; y++)
-        {
-            TryEnqueue(0, y);
-            TryEnqueue(texture.width - 1, y);
-        }
-
-        while (queue.Count > 0)
-        {
-            int index = queue.Dequeue();
-            int x = index % texture.width;
-            int y = index / texture.width;
-
-            TryEnqueue(x + 1, y);
-            TryEnqueue(x - 1, y);
-            TryEnqueue(x, y + 1);
-            TryEnqueue(x, y - 1);
-        }
-
-        return visited;
-    }
-
     private static bool IsUiBackground(Color color)
     {
-        bool veryLight = color.r > 0.88f && color.g > 0.88f && color.b > 0.88f;
+        bool veryLight = color.r > 0.78f && color.g > 0.78f && color.b > 0.78f;
         float channelSpread = Mathf.Max(color.r, Mathf.Max(color.g, color.b)) - Mathf.Min(color.r, Mathf.Min(color.g, color.b));
-        return veryLight && channelSpread < 0.08f;
+        return veryLight && channelSpread < 0.18f;
+    }
+
+    private void DrawDeathMenu()
+    {
+        GUI.enabled = true;
+        GUI.color = new Color(0f, 0f, 0f, 0.72f);
+        GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Texture2D.whiteTexture);
+        GUI.color = Color.white;
+
+        GUI.Label(MenuUI.CenteredRect(70f, 820f, 180f), "GAME OVER", MenuUI.MakeLabelStyle(62));
+        GUIStyle buttonStyle = MenuUI.MakeButtonStyle(34);
+        Color originalBg = GUI.backgroundColor;
+
+        if (showingLoadSlots)
+        {
+            DrawDeathLoadSlots(buttonStyle);
+            GUI.backgroundColor = originalBg;
+            return;
+        }
+
+        GUI.backgroundColor = new Color(0.5f, 0.85f, 0.5f);
+        GUI.enabled = SaveSystem.HasAnySave();
+        if (GUI.Button(MenuUI.CenteredRect(340f, 620f, 75f), "Load Game", buttonStyle))
+        {
+            showingLoadSlots = true;
+        }
+
+        GUI.enabled = true;
+        GUI.backgroundColor = new Color(0.9f, 0.8f, 0.4f);
+        if (GUI.Button(MenuUI.CenteredRect(470f, 620f, 75f), "Main Menu", buttonStyle))
+        {
+            StartCoroutine(ReturnToMainMenuRoutine());
+        }
+
+        GUI.backgroundColor = new Color(0.9f, 0.5f, 0.55f);
+        if (GUI.Button(MenuUI.CenteredRect(600f, 620f, 75f), "Quit to Desktop", buttonStyle))
+        {
+            QuitGame();
+        }
+
+        GUI.backgroundColor = originalBg;
+    }
+
+    private void DrawDeathLoadSlots(GUIStyle buttonStyle)
+    {
+        Color originalBg = GUI.backgroundColor;
+        for (int slot = 1; slot <= SaveSystem.SlotCount; slot++)
+        {
+            bool hasSave = SaveSystem.HasSave(slot);
+            GUI.enabled = hasSave;
+            GUI.backgroundColor = hasSave ? new Color(0.5f, 0.85f, 0.5f) : new Color(0.32f, 0.32f, 0.34f);
+            int loadSlot = slot;
+            if (GUI.Button(MenuUI.CenteredRect(250f + slot * 82f, 720f, 60f), SaveSystem.GetSlotSummary(slot), MenuUI.MakeButtonStyle(26)))
+            {
+                SaveData save = SaveSystem.ReadSlot(loadSlot);
+                if (save != null)
+                {
+                    GameModal.Close();
+                    Time.timeScale = 1f;
+                    AudioListener.pause = false;
+                    GameSession.LoadFromSave(save);
+                }
+            }
+        }
+
+        GUI.enabled = true;
+        GUI.backgroundColor = new Color(0.9f, 0.5f, 0.55f);
+        if (GUI.Button(MenuUI.CenteredRect(730f, 420f, 65f), "Back", buttonStyle))
+        {
+            showingLoadSlots = false;
+        }
+
+        GUI.backgroundColor = originalBg;
+    }
+
+    private IEnumerator ReturnToMainMenuRoutine()
+    {
+        if (returningToMainMenu)
+        {
+            yield break;
+        }
+
+        returningToMainMenu = true;
+        GameModal.Close();
+        PauseMenu pauseMenu = FindAnyObjectByType<PauseMenu>();
+        if (pauseMenu != null)
+        {
+            Destroy(pauseMenu);
+        }
+
+        Time.timeScale = 1f;
+        AudioListener.pause = false;
+        GameObject systemsObject = SystemsBootstrap.PrepareForMainMenuReturn();
+        yield return null;
+        SceneManager.LoadScene("MainMenu", LoadSceneMode.Single);
+        yield return null;
+        if (systemsObject != null)
+        {
+            SystemsBootstrap.Teardown();
+        }
+    }
+
+    private static void QuitGame()
+    {
+        Time.timeScale = 1f;
+        AudioListener.pause = false;
+        GameModal.Close();
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
+        Application.Quit();
+#endif
     }
 
     private void DrawEquippedSpell(Rect rect, float alpha)

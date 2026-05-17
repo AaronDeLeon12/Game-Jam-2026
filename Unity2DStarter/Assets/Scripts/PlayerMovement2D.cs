@@ -90,8 +90,11 @@ public class PlayerMovement2D : MonoBehaviour
 
     private void Update()
     {
-        if (PauseMenu.IsPaused || GameModal.IsOpen)
+        if (PauseMenu.IsPaused || GameModal.IsOpen || (playerStats != null && playerStats.IsDead))
         {
+            horizontalInput = 0f;
+            jumpRequested = false;
+            dashRequested = false;
             return;
         }
 
@@ -159,6 +162,12 @@ public class PlayerMovement2D : MonoBehaviour
 
     private void FixedUpdate()
     {
+        if (playerStats != null && playerStats.IsDead)
+        {
+            body.linearVelocity = Vector2.zero;
+            return;
+        }
+
         if (isDashing)
         {
             body.linearVelocity = Vector2.zero;

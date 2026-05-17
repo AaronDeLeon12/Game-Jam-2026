@@ -26,7 +26,8 @@ public class PlayerInteract : MonoBehaviour
 
     private void Update()
     {
-        if (GameModal.IsOpen)
+        PlayerStats stats = GetComponent<PlayerStats>();
+        if (GameModal.IsOpen || (stats != null && stats.IsDead))
         {
             return;
         }

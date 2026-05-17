@@ -66,7 +66,7 @@ public class FlyingEnemyAI : MonoBehaviour
             animator = gameObject.AddComponent<ResourceSheetAnimator2D>();
         }
 
-        animator.Configure("Enemies/evilFairy", 4, 3, 8f, true, 1, 256f, 10);
+        animator.Configure("Enemies/fairyUpdatedSprites", 4, 3, 8f, true, 1, 256f, 10);
 
         Transform glow = transform.Find("Charge Glow");
         if (glow == null)

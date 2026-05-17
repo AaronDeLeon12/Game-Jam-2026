@@ -37,8 +37,14 @@ public class MainMenu : MonoBehaviour
         SetupMusic();
     }
 
+    private void Start()
+    {
+        EnsureCamera();
+    }
+
     private void OnGUI()
     {
+        EnsureCamera();
         DrawBackground();
 
         if (showingSettings)
@@ -297,11 +303,35 @@ public class MainMenu : MonoBehaviour
         confirmAction = null;
     }
 
-    private void SetupMusic() { GameAudio.PlayMusic("MainMenu", 0.45f); }
+    private void SetupMusic()
+    {
+        GameAudio.PlayMusic("MainMenu", 0.45f);
+    }
 
     private static void EnsureCamera()
     {
-        if (Camera.main != null) return;
+        Camera existing = Camera.main;
+        if (existing != null && existing.isActiveAndEnabled && existing.gameObject.scene.name != "DontDestroyOnLoad")
+        {
+            return;
+        }
+
+        Camera[] cameras = FindObjectsByType<Camera>(FindObjectsSortMode.None);
+        for (int i = 0; i < cameras.Length; i++)
+        {
+            if (cameras[i] != null && cameras[i].gameObject.scene.name != "DontDestroyOnLoad" && cameras[i].isActiveAndEnabled)
+            {
+                cameras[i].tag = "MainCamera";
+                return;
+            }
+        }
+
+        if (existing != null && existing.gameObject.scene.name == "DontDestroyOnLoad")
+        {
+            existing.tag = "Untagged";
+            existing.enabled = false;
+        }
+
         GameObject camObj = new GameObject("Main Camera");
         camObj.tag = "MainCamera";
         Camera cam = camObj.AddComponent<Camera>();

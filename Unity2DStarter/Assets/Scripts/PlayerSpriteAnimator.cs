@@ -15,7 +15,7 @@ public class PlayerSpriteAnimator : MonoBehaviour
     [SerializeField] private float minimumWalkSpeed = 0.05f;
     [SerializeField] private float targetWorldHeight = 1.45f;
     [SerializeField] private float crouchVisualScaleMultiplier = 0.72f;
-    [SerializeField] private float deathGroundOffset = -0.2f;
+    [SerializeField] private float deathGroundOffset = -0.55f;
 
     private readonly List<Sprite> walkFrames = new List<Sprite>();
     private readonly List<Sprite> jumpFrames = new List<Sprite>();
@@ -299,8 +299,18 @@ public class PlayerSpriteAnimator : MonoBehaviour
         crouchWalkFrames.AddRange(LoadSheetFrames("Player/States/caminandoAgachada", CrouchWalkSheetFrameRects, "crouch_walk"));
         teleportVanishFrames.AddRange(LoadSheetFrames("Player/States/teleportCycle", TeleportVanishRects, "teleport_vanish"));
         teleportAppearFrames.AddRange(LoadSheetFrames("Player/States/teleportCycle", TeleportAppearRects, "teleport_appear"));
-        spellAttackFrames.AddRange(RuntimeSpriteCropper.LoadFixedGridFrames("Player/States/spellAttackAnim", 4, 3, 320f));
-        deathFrames.AddRange(RuntimeSpriteCropper.LoadFixedGridFrames("Player/States/deathAnim", 4, 3, 320f));
+        spellAttackFrames.AddRange(RuntimeSpriteCropper.LoadNormalizedFrameFiles(
+            "Player/States",
+            new[] { "spell1_8", "spell2", "spell3", "spell4", "spell5", "spell6", "spell7", "spell1_8" },
+            320f,
+            8,
+            12));
+        deathFrames.AddRange(RuntimeSpriteCropper.LoadNormalizedFrameFiles(
+            "Player/States",
+            new[] { "death1", "death2", "death3", "death4", "death5", "death6", "death7" },
+            320f,
+            8,
+            12));
     }
 
     private void ApplyIdleFrame()
@@ -456,8 +466,8 @@ public class PlayerSpriteAnimator : MonoBehaviour
         float frameDuration = duration / Mathf.Max(1, frames.Count);
         for (int i = 0; i < frames.Count; i++)
         {
-            ApplySprite(frames[i], true);
-            yield return new WaitForSeconds(frameDuration);
+            ApplySpriteAtStandingScale(frames[i]);
+            yield return new WaitForSecondsRealtime(frameDuration);
         }
 
         isPlayingExternalAnimation = false;
@@ -471,13 +481,34 @@ public class PlayerSpriteAnimator : MonoBehaviour
         float frameDuration = duration / Mathf.Max(1, deathFrames.Count);
         for (int i = 0; i < deathFrames.Count; i++)
         {
-            ApplySprite(deathFrames[i], true, 1f, deathGroundOffset);
-            yield return new WaitForSeconds(frameDuration);
+            ApplySpriteAtStandingScale(deathFrames[i], deathGroundOffset);
+            yield return new WaitForSecondsRealtime(frameDuration);
         }
 
         if (deathFrames.Count > 0)
         {
-            ApplySprite(deathFrames[deathFrames.Count - 1], true, 1f, deathGroundOffset);
+            ApplySpriteAtStandingScale(deathFrames[deathFrames.Count - 1], deathGroundOffset);
+        }
+    }
+
+    private void ApplySpriteAtStandingScale(Sprite sprite, float localYOffset = 0f)
+    {
+        if (spriteRenderer == null || sprite == null)
+        {
+            return;
+        }
+
+        spriteRenderer.transform.localPosition = new Vector3(0f, localYOffset, 0f);
+        spriteRenderer.sprite = sprite;
+
+        if (idleSprite != null && idleSprite.bounds.size.y > 0f)
+        {
+            float scale = targetWorldHeight / idleSprite.bounds.size.y;
+            spriteRenderer.transform.localScale = new Vector3(scale, scale, 1f);
+        }
+        else
+        {
+            NormalizeSpriteScale();
         }
     }
 

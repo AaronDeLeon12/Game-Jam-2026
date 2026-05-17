@@ -8,25 +8,35 @@ public class ResourceSheetAnimator2D : MonoBehaviour
     [SerializeField] private int rows = 3;
     [SerializeField] private float framesPerSecond = 8f;
     [SerializeField] private bool loop = true;
+    [SerializeField] private bool pingPong;
     [SerializeField] private int ignoreLastFrames;
     [SerializeField] private float pixelsPerUnit = 256f;
     [SerializeField] private int cropPadding = 6;
+    [SerializeField] private Vector2 spritePivot = new Vector2(0.5f, 0.5f);
 
     private SpriteRenderer spriteRenderer;
     private Sprite[] frames;
     private float timer;
     private int frameIndex;
+    private int frameDirection = 1;
 
-    public void Configure(string newResourcePath, int newColumns, int newRows, float fps, bool shouldLoop, int ignoredLastFrames = 0, float ppu = 256f, int padding = 6)
+    public void Configure(string newResourcePath, int newColumns, int newRows, float fps, bool shouldLoop, int ignoredLastFrames = 0, float ppu = 256f, int padding = 6, Vector2? normalizedPivot = null)
+    {
+        Configure(newResourcePath, newColumns, newRows, fps, shouldLoop, false, ignoredLastFrames, ppu, padding, normalizedPivot);
+    }
+
+    public void Configure(string newResourcePath, int newColumns, int newRows, float fps, bool shouldLoop, bool shouldPingPong, int ignoredLastFrames = 0, float ppu = 256f, int padding = 6, Vector2? normalizedPivot = null)
     {
         resourcePath = newResourcePath;
         columns = newColumns;
         rows = newRows;
         framesPerSecond = fps;
         loop = shouldLoop;
+        pingPong = shouldPingPong;
         ignoreLastFrames = Mathf.Max(0, ignoredLastFrames);
         pixelsPerUnit = ppu;
         cropPadding = padding;
+        spritePivot = normalizedPivot ?? new Vector2(0.5f, 0.5f);
         LoadFrames();
     }
 
@@ -47,15 +57,10 @@ public class ResourceSheetAnimator2D : MonoBehaviour
         {
             spriteRenderer = GetComponent<SpriteRenderer>();
         }
-        Sprite[] loaded = RuntimeSpriteCropper.LoadFixedGridFrames(resourcePath, columns, rows, pixelsPerUnit);
-        int count = Mathf.Max(0, loaded.Length - ignoreLastFrames);
-        frames = new Sprite[count];
-        for (int i = 0; i < count; i++)
-        {
-            frames[i] = loaded[i];
-        }
+        frames = RuntimeSpriteCropper.LoadNormalizedGridFrames(resourcePath, columns, rows, pixelsPerUnit, cropPadding, ignoreLastFrames, 8);
 
         frameIndex = 0;
+        frameDirection = 1;
         timer = 0f;
         if (spriteRenderer != null && frames.Length > 0)
         {
@@ -77,13 +82,34 @@ public class ResourceSheetAnimator2D : MonoBehaviour
         while (timer >= frameDuration)
         {
             timer -= frameDuration;
-            frameIndex++;
+            AdvanceFrame();
+            spriteRenderer.sprite = frames[frameIndex];
+        }
+    }
+
+    private void AdvanceFrame()
+    {
+        if (pingPong)
+        {
+            frameIndex += frameDirection;
             if (frameIndex >= frames.Length)
             {
-                frameIndex = loop ? 0 : frames.Length - 1;
+                frameDirection = -1;
+                frameIndex = Mathf.Max(0, frames.Length - 2);
+            }
+            else if (frameIndex < 0)
+            {
+                frameDirection = 1;
+                frameIndex = loop ? Mathf.Min(1, frames.Length - 1) : 0;
             }
 
-            spriteRenderer.sprite = frames[frameIndex];
+            return;
+        }
+
+        frameIndex++;
+        if (frameIndex >= frames.Length)
+        {
+            frameIndex = loop ? 0 : frames.Length - 1;
         }
     }
 }
