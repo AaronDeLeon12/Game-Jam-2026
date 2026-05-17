@@ -34,6 +34,7 @@ public static class PlaceholderSprites
         renderer.sprite = Square;
         renderer.color = color;
         renderer.sortingOrder = sortingOrder;
+        SpriteLit.Apply(renderer);
         return renderer;
     }
 }

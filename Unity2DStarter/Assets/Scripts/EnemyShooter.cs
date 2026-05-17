@@ -45,6 +45,7 @@ public class EnemyShooter : MonoBehaviour
         SpriteRenderer renderer = projectile.AddComponent<SpriteRenderer>();
         renderer.sprite = PlaceholderSprites.Square;
         renderer.color = new Color(0.35f, 1f, 0.25f);
+        SpriteLit.Apply(renderer);
         renderer.sortingOrder = 20;
 
         BoxCollider2D collider = projectile.AddComponent<BoxCollider2D>();

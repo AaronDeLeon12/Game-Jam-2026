@@ -102,11 +102,11 @@ public class PlayerMovement2D : MonoBehaviour
             hasDoubleJumped = false;
         }
 
-        if (JumpWasPressed() && isGrounded && !isDucking && !isBlocking)
+        if (JumpWasPressed() && isGrounded && !isDucking && !isBlocking && !HomeMode.IsActive)
         {
             jumpRequested = true;
         }
-        else if (JumpWasPressed() && !isGrounded && !hasDoubleJumped && !isBlocking && TryPayMovementCost(doubleJumpManaCost))
+        else if (JumpWasPressed() && !isGrounded && !hasDoubleJumped && !isBlocking && !HomeMode.IsActive && TryPayMovementCost(doubleJumpManaCost))
         {
             jumpRequested = true;
             hasDoubleJumped = true;
@@ -115,6 +115,7 @@ public class PlayerMovement2D : MonoBehaviour
         if ((Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.RightShift))
             && Time.time >= nextDashTime
             && !isBlocking
+            && !HomeMode.IsActive
             && TryPayMovementCost(dashManaCost))
         {
             dashRequested = true;
@@ -134,6 +135,10 @@ public class PlayerMovement2D : MonoBehaviour
         bool isGliding = hasDoubleJumped && !isGrounded && JumpIsHeld() && !isBlocking && body.linearVelocity.y <= 0f;
         body.gravityScale = isGliding ? glideGravityScale : gravityScale;
         float currentMoveSpeed = isDucking ? moveSpeed * duckSpeedMultiplier : moveSpeed;
+        if (HomeMode.IsActive)
+        {
+            currentMoveSpeed *= HomeMode.MoveSpeedMultiplier;
+        }
 
         Vector2 velocity = body.linearVelocity;
         velocity.x = isBlocking ? 0f : horizontalInput * currentMoveSpeed;

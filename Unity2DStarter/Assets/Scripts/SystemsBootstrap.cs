@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 
 /// <summary>
 /// Owns the persistent game systems (Player, Camera, HUD) that must exist in
@@ -74,6 +75,31 @@ public class SystemsBootstrap : MonoBehaviour
         BuildPlayer();
         BuildCamera();
         BuildHud();
+        BuildGlobalLight();
+    }
+
+    private void BuildGlobalLight()
+    {
+        // If the scene already has a global light (e.g. one placed by hand in
+        // the editor so the scene is visible while building), use that and do
+        // not stack a second one.
+        foreach (Light2D existing in FindObjectsByType<Light2D>(FindObjectsSortMode.None))
+        {
+            if (existing.lightType == Light2D.LightType.Global)
+            {
+                return;
+            }
+        }
+
+        GameObject lightObj = new GameObject("Global Light 2D");
+        lightObj.transform.SetParent(transform, false);
+
+        Light2D light = lightObj.AddComponent<Light2D>();
+        light.lightType = Light2D.LightType.Global;
+        // Dim, slightly cool ambient: the world is dark by default so that
+        // local lights (e.g. inside the house) read as bright/warm.
+        light.intensity = 0.45f;
+        light.color = new Color(0.62f, 0.67f, 0.85f);
     }
 
     private void BuildPlayer()
