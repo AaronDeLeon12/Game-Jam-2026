@@ -35,7 +35,7 @@ public class OutsideScene : MonoBehaviour
             }
         }
 
-        SceneBackground.Show("Backgrounds/fondo_exterior");
+        SceneBackground.Show("Backgrounds/fondo_verde");
 
         GameObject spawn = new GameObject("Player Spawn Point");
         spawn.transform.position = new Vector3(-8f, 0.5f, 0f);

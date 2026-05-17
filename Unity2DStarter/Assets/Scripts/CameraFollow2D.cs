@@ -24,7 +24,7 @@ public class CameraFollow2D : MonoBehaviour
     {
         if (target != null)
         {
-            transform.position = target.position + offset;
+            transform.position = ClampToBounds(target.position + offset);
         }
     }
 
@@ -35,7 +35,28 @@ public class CameraFollow2D : MonoBehaviour
             return;
         }
 
-        Vector3 desiredPosition = target.position + offset;
+        Vector3 desiredPosition = ClampToBounds(target.position + offset);
         transform.position = Vector3.Lerp(transform.position, desiredPosition, followSpeed * Time.deltaTime);
+    }
+
+    // Keeps the camera inside the scenario limits (defined by the invisible
+    // walls via CameraBounds2D) so the floor/scene edges are never visible.
+    // When the player nears an edge the clamped target stops moving, so the
+    // camera locks on that axis instead of following.
+    private Vector3 ClampToBounds(Vector3 desired)
+    {
+        CameraBounds2D bounds = CameraBounds2D.Active;
+        if (bounds == null)
+        {
+            return desired;
+        }
+
+        Camera cam = GetComponent<Camera>();
+        if (cam == null)
+        {
+            cam = Camera.main;
+        }
+
+        return bounds.Clamp(desired, cam);
     }
 }

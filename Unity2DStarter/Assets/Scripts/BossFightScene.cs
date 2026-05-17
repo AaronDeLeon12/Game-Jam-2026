@@ -33,7 +33,7 @@ public class BossFightScene : MonoBehaviour
             }
         }
 
-        SceneBackground.Show("Backgrounds/fondo_exterior");
+        SceneBackground.Show("Backgrounds/fondo_verde");
 
         GameObject spawn = new GameObject("Player Spawn Point");
         spawn.transform.position = playerSpawn;

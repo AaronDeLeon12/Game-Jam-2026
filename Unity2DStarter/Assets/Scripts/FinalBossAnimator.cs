@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -22,12 +23,19 @@ public class FinalBossAnimator : MonoBehaviour
     [Tooltip("Visual offset from the root so the sprite sits on the collider's base.")]
     [SerializeField] private float visualYOffset = -1.1f;
 
+    [Header("Damage Flash")]
+    [SerializeField] private float overlayMaxAlpha = 0.55f;
+    [SerializeField] private int flashBlinkCount = 3;
+    [SerializeField] private float flashBlinkHalfDuration = 0.07f;
+
     private readonly List<Sprite> frames = new List<Sprite>();
     private readonly List<Sprite> attackFrames = new List<Sprite>();
     private SpriteRenderer spriteRenderer;
+    private SpriteRenderer overlayRenderer;
     private FinalBoss boss;
     private float frameTimer;
     private int frameIndex;
+    private Coroutine activeFlash;
 
     private void Awake()
     {
@@ -93,6 +101,54 @@ public class FinalBossAnimator : MonoBehaviour
         spriteRenderer.sortingOrder = 10;
         spriteRenderer.sprite = frames[0];
         SpriteLit.Apply(spriteRenderer);
+
+        // Red damage-flash overlay: same transform as BossVisual, drawn on top.
+        Transform overlayT = visual.Find("BossVisualOverlay");
+        if (overlayT == null)
+        {
+            overlayT = new GameObject("BossVisualOverlay").transform;
+            overlayT.SetParent(visual, false);
+        }
+        overlayT.localPosition = Vector3.zero;
+        overlayT.localScale = Vector3.one;
+
+        overlayRenderer = overlayT.GetComponent<SpriteRenderer>();
+        if (overlayRenderer == null)
+        {
+            overlayRenderer = overlayT.gameObject.AddComponent<SpriteRenderer>();
+        }
+
+        overlayRenderer.drawMode = SpriteDrawMode.Simple;
+        overlayRenderer.sortingOrder = 11;          // one layer above the main sprite
+        overlayRenderer.color = new Color(1f, 0f, 0f, 0f);  // fully transparent at start
+        overlayRenderer.sprite = frames[0];
+        SpriteLit.Apply(overlayRenderer);
+    }
+
+    /// <summary>Called by FinalBoss.TakeDamage to trigger the red blink.</summary>
+    public void FlashDamage()
+    {
+        if (overlayRenderer == null) return;
+        if (activeFlash != null) StopCoroutine(activeFlash);
+        activeFlash = StartCoroutine(DamageFlashRoutine());
+    }
+
+    private IEnumerator DamageFlashRoutine()
+    {
+        Color redOn  = new Color(1f, 0f, 0f, overlayMaxAlpha);
+        Color redOff = new Color(1f, 0f, 0f, 0f);
+
+        for (int i = 0; i < flashBlinkCount; i++)
+        {
+            overlayRenderer.sprite = spriteRenderer != null ? spriteRenderer.sprite : overlayRenderer.sprite;
+            overlayRenderer.flipX  = spriteRenderer != null && spriteRenderer.flipX;
+            overlayRenderer.color  = redOn;
+            yield return new WaitForSeconds(flashBlinkHalfDuration);
+            overlayRenderer.color  = redOff;
+            yield return new WaitForSeconds(flashBlinkHalfDuration);
+        }
+
+        activeFlash = null;
     }
 
     private void Update()
@@ -106,6 +162,8 @@ public class FinalBossAnimator : MonoBehaviour
         {
             spriteRenderer.flipX = boss.FacingDirection < 0;
         }
+
+        // Overlay sprite and flip are kept in sync by DamageFlashRoutine when active.
 
         // Melee attack OR distance shoot: both use the 3 "stand then strike"
         // frames. The attack art faces the opposite way to the walk art, so
