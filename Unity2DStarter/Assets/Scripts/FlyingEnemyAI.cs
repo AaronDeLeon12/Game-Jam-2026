@@ -79,14 +79,14 @@ public class FlyingEnemyAI : MonoBehaviour
 
     private void UpdateMoveState()
     {
-        if (player != null && Vector2.Distance(player.position, homePosition) <= homeLeashRadius)
+        if (player != null && Vector2.Distance(player.position, homePosition) <= homeLeashRadius * DifficultyRules.EnemyRangeMultiplier)
         {
             body.linearVelocity = Vector2.zero;
 
             if (Time.time >= nextAttackTime)
             {
                 state = State.Windup;
-                stateEndTime = Time.time + windupDuration;
+                stateEndTime = Time.time + windupDuration * DifficultyRules.EnemyCooldownMultiplier;
                 dashDirection = ((Vector2)player.position - (Vector2)transform.position).normalized;
                 body.linearVelocity = Vector2.zero;
                 HitFlash2D.Play(gameObject, new Color(1f, 0.85f, 0.15f), windupDuration);
@@ -112,7 +112,7 @@ public class FlyingEnemyAI : MonoBehaviour
         state = State.Dash;
         dealtDamageThisDash = false;
         stateEndTime = Time.time + dashDuration;
-        body.linearVelocity = dashDirection * moveSpeed;
+        body.linearVelocity = dashDirection * moveSpeed * DifficultyRules.EnemyAggressionMultiplier;
     }
 
     private void UpdateDash()
@@ -137,7 +137,7 @@ public class FlyingEnemyAI : MonoBehaviour
         body.linearVelocity = Vector2.zero;
         state = State.Recover;
         stateEndTime = Time.time + recoveryDuration;
-        nextAttackTime = Time.time + dashCooldown;
+        nextAttackTime = Time.time + dashCooldown * DifficultyRules.EnemyCooldownMultiplier;
     }
 
     private void MoveToward(Vector2 target, float speed)

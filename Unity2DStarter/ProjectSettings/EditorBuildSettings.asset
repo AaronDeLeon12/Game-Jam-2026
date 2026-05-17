@@ -20,4 +20,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/outside_1.unity
     guid: c362244de1f44c28947f632829cc98e8
+  - enabled: 1
+    path: Assets/Scenes/SurvivalTesting.unity
+    guid: bbef638fb02d45c383051a48629ac7af
   m_configObjects: {}

@@ -35,6 +35,10 @@ public class Enemy : MonoBehaviour, IDamageable
     private bool alreadyAttacked;
     private bool aggroed;
     private float nextContactDamageTime;
+    private float baseMoveSpeed;
+    private float baseSightRange;
+    private float baseAttackRange;
+    private float baseTimeBetweenAttacks;
 
     private void Awake()
     {
@@ -42,6 +46,10 @@ public class Enemy : MonoBehaviour, IDamageable
         bodyCollider = GetComponent<Collider2D>();
         body.freezeRotation = true;
 
+        baseMoveSpeed = moveSpeed;
+        baseSightRange = sightRange;
+        baseAttackRange = attackRange;
+        baseTimeBetweenAttacks = timeBetweenAttacks;
         health = maxHealth;
 
         GameObject playerObj = GameObject.Find("Player");
@@ -66,8 +74,8 @@ public class Enemy : MonoBehaviour, IDamageable
         }
 
         float distanceToPlayer = Vector2.Distance(transform.position, player.position);
-        bool playerInSightRange = distanceToPlayer <= sightRange;
-        bool playerInAttackRange = distanceToPlayer <= attackRange;
+        bool playerInSightRange = distanceToPlayer <= baseSightRange * DifficultyRules.EnemyRangeMultiplier;
+        bool playerInAttackRange = distanceToPlayer <= baseAttackRange * DifficultyRules.EnemyRangeMultiplier;
 
         if (playerInAttackRange)
             AttackPlayer();
@@ -82,14 +90,14 @@ public class Enemy : MonoBehaviour, IDamageable
         if (IsWallAhead() || !IsGroundAhead())
             Flip();
 
-        body.linearVelocity = new Vector2(facingDirection * moveSpeed, body.linearVelocity.y);
+        body.linearVelocity = new Vector2(facingDirection * GetMoveSpeed(), body.linearVelocity.y);
     }
 
     private void ChasePlayer()
     {
         float direction = Mathf.Sign(player.position.x - transform.position.x);
         SetFacing((int)direction);
-        body.linearVelocity = new Vector2(direction * moveSpeed, body.linearVelocity.y);
+        body.linearVelocity = new Vector2(direction * GetMoveSpeed(), body.linearVelocity.y);
     }
 
     private void AttackPlayer()
@@ -104,7 +112,7 @@ public class Enemy : MonoBehaviour, IDamageable
             if (playerStats != null)
                 EnemyDamage2D.TryDamagePlayer(player.gameObject, attackDamage);
 
-            Invoke(nameof(ResetAttack), timeBetweenAttacks);
+            Invoke(nameof(ResetAttack), baseTimeBetweenAttacks * DifficultyRules.EnemyCooldownMultiplier);
         }
     }
 
@@ -122,7 +130,15 @@ public class Enemy : MonoBehaviour, IDamageable
         GameAudio.PlaySfx("hitSFX", transform.position, 0.65f);
 
         if (health <= 0f)
+        {
+            SessionStats.Record("enemies_killed");
             Destroy(gameObject);
+        }
+    }
+
+    private float GetMoveSpeed()
+    {
+        return baseMoveSpeed * DifficultyRules.EnemyAggressionMultiplier;
     }
 
     private void OnCollisionStay2D(Collision2D collision)

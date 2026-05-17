@@ -50,8 +50,8 @@ public class KitingShooterEnemyAI : MonoBehaviour
         if (Time.time >= nextFireTime)
         {
             FireAtPlayer();
-            nextFireTime = Time.time + fireInterval;
-            recoveryEndTime = Time.time + recoveryDuration;
+            nextFireTime = Time.time + fireInterval * DifficultyRules.EnemyCooldownMultiplier;
+            recoveryEndTime = Time.time + recoveryDuration * DifficultyRules.EnemyCooldownMultiplier;
         }
     }
 
@@ -61,16 +61,18 @@ public class KitingShooterEnemyAI : MonoBehaviour
         float absDistance = Mathf.Abs(distance);
         float direction = 0f;
 
-        if (absDistance < preferredDistance - 0.75f)
+        float adjustedPreferredDistance = preferredDistance * DifficultyRules.EnemyRangeMultiplier;
+
+        if (absDistance < adjustedPreferredDistance - 0.75f)
         {
             direction = -Mathf.Sign(distance);
         }
-        else if (absDistance > preferredDistance + 0.75f)
+        else if (absDistance > adjustedPreferredDistance + 0.75f)
         {
             direction = Mathf.Sign(distance);
         }
 
-        body.linearVelocity = new Vector2(direction * moveSpeed, body.linearVelocity.y);
+        body.linearVelocity = new Vector2(direction * moveSpeed * DifficultyRules.EnemyAggressionMultiplier, body.linearVelocity.y);
     }
 
     private void FireAtPlayer()

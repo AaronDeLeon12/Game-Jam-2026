@@ -76,14 +76,14 @@ public class PlayerSpriteAnimator : MonoBehaviour
 
     private static readonly Rect[] CrouchWalkSheetFrameRects =
     {
-        new Rect(20f, 380f, 200f, 300f),
-        new Rect(180f, 375f, 220f, 305f),
-        new Rect(355f, 360f, 220f, 320f),
-        new Rect(540f, 375f, 220f, 305f),
-        new Rect(725f, 360f, 200f, 320f),
-        new Rect(915f, 375f, 220f, 305f),
-        new Rect(1100f, 360f, 220f, 320f),
-        new Rect(1285f, 375f, 220f, 305f)
+        new Rect(30f, 388f, 180f, 292f),
+        new Rect(190f, 383f, 200f, 297f),
+        new Rect(365f, 368f, 200f, 312f),
+        new Rect(550f, 383f, 200f, 297f),
+        new Rect(735f, 368f, 180f, 312f),
+        new Rect(925f, 383f, 200f, 297f),
+        new Rect(1110f, 368f, 200f, 312f),
+        new Rect(1295f, 383f, 200f, 297f)
     };
 
     private static readonly Rect[] TeleportVanishRects =

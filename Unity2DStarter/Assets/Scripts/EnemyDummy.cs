@@ -52,6 +52,7 @@ public class EnemyDummy : MonoBehaviour, IDamageable
 
         if (health <= 0f)
         {
+            SessionStats.Record("enemies_killed");
             StartCoroutine(RespawnAfterDelay());
         }
     }

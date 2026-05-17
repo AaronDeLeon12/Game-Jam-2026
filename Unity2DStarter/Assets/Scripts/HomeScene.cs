@@ -31,6 +31,7 @@ public class HomeScene : MonoBehaviour
         day = DayManager.Instance != null ? DayManager.Instance.CurrentDay : 1;
 
         BuildSpawnPoint();
+        HouseWoodKit.BuildStarterSet(transform);
         // Base home layout (floor/walls) is now authored visually in the
         // home_day_1 scene. Only per-day changes are built in code.
         BuildDayVariations(day);

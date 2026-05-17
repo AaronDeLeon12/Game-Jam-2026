@@ -21,6 +21,7 @@ public class PlayerStats : MonoBehaviour
     private bool isBlocking;
     private bool wasBlocking;
     private PlayerActionCounter actionCounter;
+    private bool recordedGameOver;
 
     public float Health => health;
     public float Mana => mana;
@@ -94,6 +95,7 @@ public class PlayerStats : MonoBehaviour
         if (health <= 0f)
         {
             isDead = true;
+            RecordGameOver();
         }
     }
 
@@ -111,6 +113,7 @@ public class PlayerStats : MonoBehaviour
         if (health <= 0f)
         {
             isDead = true;
+            RecordGameOver();
         }
     }
 
@@ -132,11 +135,14 @@ public class PlayerStats : MonoBehaviour
             health = Mathf.Max(0f, health - healthCost);
         }
 
-        manaRegenBlockedUntil = Mathf.Max(manaRegenBlockedUntil, Time.time + regenDelay);
+        manaRegenBlockedUntil = Mathf.Max(
+            manaRegenBlockedUntil,
+            Time.time + regenDelay * DifficultyRules.ManaRegenDelayMultiplier);
 
         if (health <= 0f)
         {
             isDead = true;
+            RecordGameOver();
         }
 
         return true;
@@ -169,6 +175,24 @@ public class PlayerStats : MonoBehaviour
         health = Mathf.Min(maxHealth, health + Mathf.Max(0f, amount));
     }
 
+    public void RestoreFullHealth()
+    {
+        if (isDead)
+        {
+            return;
+        }
+
+        health = maxHealth;
+    }
+
+    public void SetResources(float newHealth, float newMana)
+    {
+        health = Mathf.Clamp(newHealth, 0f, maxHealth);
+        mana = Mathf.Clamp(newMana, 0f, maxMana);
+        isDead = health <= 0f;
+        recordedGameOver = isDead;
+    }
+
     public float ConvertManaDebtToHealth(float manaDebt)
     {
         return Mathf.Ceil(Mathf.Max(0f, manaDebt) / healthValueInMana);
@@ -185,5 +209,17 @@ public class PlayerStats : MonoBehaviour
         {
             actionCounter.Record(actionName);
         }
+    }
+
+    private void RecordGameOver()
+    {
+        if (recordedGameOver)
+        {
+            return;
+        }
+
+        recordedGameOver = true;
+        SessionStats.Record("game_over");
+        RecordAction("game_over");
     }
 }

@@ -9,10 +9,12 @@ public class EnemyShooter : MonoBehaviour
 
     private float nextFireTime;
     private EnemyHealth2D health;
+    private Transform player;
 
     private void Awake()
     {
         health = GetComponent<EnemyHealth2D>();
+        FindPlayer();
     }
 
     private void Update()
@@ -32,8 +34,28 @@ public class EnemyShooter : MonoBehaviour
             return;
         }
 
-        nextFireTime = Time.time + fireInterval;
+        if (player == null)
+        {
+            FindPlayer();
+        }
+
+        if (player != null
+            && Vector2.Distance(transform.position, player.position) > projectileRange * DifficultyRules.EnemyRangeMultiplier)
+        {
+            return;
+        }
+
+        nextFireTime = Time.time + fireInterval * DifficultyRules.EnemyCooldownMultiplier;
         FireLeft();
+    }
+
+    private void FindPlayer()
+    {
+        GameObject playerObject = GameObject.Find("Player");
+        if (playerObject != null)
+        {
+            player = playerObject.transform;
+        }
     }
 
     private void FireLeft()

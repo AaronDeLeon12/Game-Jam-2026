@@ -103,6 +103,12 @@ public class LevelManager : MonoBehaviour
                 follow.Snap();
             }
         }
+
+        PlayerInteract interact = systems.Player != null ? systems.Player.GetComponent<PlayerInteract>() : null;
+        if (interact != null)
+        {
+            interact.RefreshInteractables();
+        }
     }
 
     private static void RemoveStrayDuplicates(SystemsBootstrap systems)

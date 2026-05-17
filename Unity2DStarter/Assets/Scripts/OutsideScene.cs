@@ -39,8 +39,61 @@ public class OutsideScene : MonoBehaviour
         spawn.transform.position = new Vector3(-8f, 0.5f, 0f);
         spawn.AddComponent<PlayerSpawnPoint>();
 
+        BuildSaveVendorArea();
+        BuildReturnDoor();
+
         // Floor is now a hand-placed scene object ("Floor" with TerrainBlock)
         // in outside_1, so it is not generated here anymore.
+    }
+
+    private void BuildSaveVendorArea()
+    {
+        Vector3 housePosition = new Vector3(14f, 3.15f, 0f);
+
+        GameObject vendorHouse = new GameObject("Casa del Vendedor Completa");
+        vendorHouse.transform.SetParent(transform, false);
+        vendorHouse.transform.position = housePosition;
+
+        SpriteRenderer houseRenderer = vendorHouse.AddComponent<SpriteRenderer>();
+        houseRenderer.sprite = RuntimeSpriteCropper.LoadTrimmedSprite("Home/completeHouse", 256f, 6);
+        houseRenderer.sortingOrder = 4;
+        SpriteLit.Apply(houseRenderer);
+        if (houseRenderer.sprite != null)
+        {
+            float scale = 5.8f / Mathf.Max(0.01f, houseRenderer.sprite.bounds.size.y);
+            vendorHouse.transform.localScale = new Vector3(scale, scale, 1f);
+        }
+
+        GameObject vendor = new GameObject("Vendedor Save Machine");
+        vendor.transform.SetParent(transform, false);
+        vendor.transform.position = new Vector3(14f, 3.35f, 0f);
+        vendor.AddComponent<SpriteRenderer>();
+        vendor.AddComponent<VendorSpriteAnimator>();
+
+        BoxCollider2D collider = vendor.AddComponent<BoxCollider2D>();
+        collider.size = new Vector2(1.6f, 2.2f);
+        collider.isTrigger = true;
+        vendor.AddComponent<SaveVendor>();
+
+    }
+
+    private void BuildReturnDoor()
+    {
+        GameObject door = new GameObject("Door Back To House");
+        door.transform.SetParent(transform, false);
+        door.transform.position = new Vector3(-10.5f, -1.4f, 0f);
+        door.transform.localScale = new Vector3(1.1f, 2f, 1f);
+
+        SpriteRenderer renderer = PlaceholderSprites.MakeSquare(door, new Color(0.38f, 0.22f, 0.11f), 4);
+        renderer.drawMode = SpriteDrawMode.Sliced;
+        renderer.size = Vector2.one;
+
+        BoxCollider2D collider = door.AddComponent<BoxCollider2D>();
+        collider.isTrigger = true;
+        collider.size = Vector2.one;
+
+        DoorInteractable interactable = door.AddComponent<DoorInteractable>();
+        interactable.Configure("home_day_1", "Press E to go home", "Go back inside the house?");
     }
 
     private void BuildDaylight()
@@ -53,4 +106,3 @@ public class OutsideScene : MonoBehaviour
         light.intensity = 1f;
     }
 }
-

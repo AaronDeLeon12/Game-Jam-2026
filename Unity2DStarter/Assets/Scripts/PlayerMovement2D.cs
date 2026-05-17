@@ -20,8 +20,8 @@ public class PlayerMovement2D : MonoBehaviour
     [SerializeField] private float duckHitboxHeightMultiplier = 0.5f;
 
     [Header("Duck Visual Settings")]
-    [SerializeField] private float duckIdleVisualHeightMultiplier = 0.78f;
-    [SerializeField] private float duckIdleVisualLowerAmount = 0.25f;
+    [SerializeField] private float duckIdleVisualHeightMultiplier = 0.68f;
+    [SerializeField] private float duckIdleVisualLowerAmount = 0.31f;
 
     [SerializeField] private float duckMoveVisualHeightMultiplier = 0.96f;
     [SerializeField] private float duckMoveVisualLowerAmount = 0.38f;
@@ -90,7 +90,7 @@ public class PlayerMovement2D : MonoBehaviour
 
     private void Update()
     {
-        if (PauseMenu.IsPaused)
+        if (PauseMenu.IsPaused || GameModal.IsOpen)
         {
             return;
         }
@@ -145,6 +145,13 @@ public class PlayerMovement2D : MonoBehaviour
             && !isBlocking
             && !HomeMode.IsActive)
         {
+            if (DifficultyRules.DashHasManaCost
+                && playerStats != null
+                && !playerStats.TryPayCost(5f, 0f))
+            {
+                return;
+            }
+
             dashRequested = true;
             RecordAction("dash");
         }
@@ -455,6 +462,11 @@ public class PlayerMovement2D : MonoBehaviour
                 continue;
             }
 
+            if (IsEnemyCollider(hit.collider))
+            {
+                continue;
+            }
+
             if (hit.collider.isTrigger
                 || hit.collider.GetComponent<PlatformEffector2D>() != null
                 || hit.collider.GetComponent<GroundSurface2D>() != null)
@@ -466,6 +478,17 @@ public class PlayerMovement2D : MonoBehaviour
         }
 
         return clamped;
+    }
+
+    private static bool IsEnemyCollider(Collider2D target)
+    {
+        return target.GetComponent<Enemy>() != null
+            || target.GetComponent<EnemyHealth2D>() != null
+            || target.GetComponent<EnemyDummy>() != null
+            || target.GetComponent<FlyingEnemyAI>() != null
+            || target.GetComponent<SmallContactEnemyAI>() != null
+            || target.GetComponent<KitingShooterEnemyAI>() != null
+            || target.GetComponent<HeavyEnemyAI>() != null;
     }
 
     private IEnumerator DashForward()

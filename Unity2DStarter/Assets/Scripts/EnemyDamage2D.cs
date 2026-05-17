@@ -18,11 +18,11 @@ public static class EnemyDamage2D
         CircleShield shield = playerStats.GetComponentInChildren<CircleShield>();
         if (shield != null)
         {
-            shield.TakeDamage(damage);
+            shield.TakeDamage(DifficultyRules.AdjustEnemyDamage(damage));
             return true;
         }
 
-        playerStats.TakeDamage(damage);
+        playerStats.TakeDamage(DifficultyRules.AdjustEnemyDamage(damage));
         return true;
     }
 

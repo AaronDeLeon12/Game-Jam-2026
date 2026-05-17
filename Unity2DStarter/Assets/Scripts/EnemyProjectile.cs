@@ -32,7 +32,7 @@ public class EnemyProjectile : MonoBehaviour
         CircleShield shield = other.GetComponent<CircleShield>();
         if (shield != null)
         {
-            shield.TakeDamage(damage);
+            shield.TakeDamage(DifficultyRules.AdjustEnemyDamage(damage));
             Destroy(gameObject);
             return;
         }

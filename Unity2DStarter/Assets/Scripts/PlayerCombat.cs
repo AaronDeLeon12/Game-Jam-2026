@@ -52,7 +52,7 @@ public class PlayerCombat : MonoBehaviour
 
     private void Update()
     {
-        if (PauseMenu.IsPaused || HomeMode.IsActive)
+        if (PauseMenu.IsPaused || GameModal.IsOpen || HomeMode.IsActive)
         {
             return;
         }

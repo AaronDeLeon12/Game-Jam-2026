@@ -26,6 +26,11 @@ public class PlayerInteract : MonoBehaviour
 
     private void Update()
     {
+        if (GameModal.IsOpen)
+        {
+            return;
+        }
+
         currentTarget = FindClosestInteractable();
 
         if (currentTarget != null && Input.GetKeyDown(interactKey))

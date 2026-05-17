@@ -32,6 +32,7 @@ public class EnemyHealth2D : MonoBehaviour, IDamageable
 
         if (health <= 0f)
         {
+            SessionStats.Record("enemies_killed");
             Destroy(gameObject);
         }
     }
