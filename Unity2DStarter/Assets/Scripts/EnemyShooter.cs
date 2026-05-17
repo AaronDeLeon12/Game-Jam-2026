@@ -8,11 +8,11 @@ public class EnemyShooter : MonoBehaviour
     [SerializeField] private float projectileDamage = 10f;
 
     private float nextFireTime;
-    private EnemyDummy health;
+    private EnemyHealth2D health;
 
     private void Awake()
     {
-        health = GetComponent<EnemyDummy>();
+        health = GetComponent<EnemyHealth2D>();
     }
 
     private void Update()

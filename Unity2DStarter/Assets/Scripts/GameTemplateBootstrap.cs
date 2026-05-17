@@ -10,6 +10,7 @@ public class GameTemplateBootstrap : MonoBehaviour
         SetupDummy();
         SetupMovementTestArea();
         SetupShooter();
+        SetupEnemyAITestArea();
         RemoveOldPlatforms();
     }
 
@@ -63,7 +64,6 @@ public class GameTemplateBootstrap : MonoBehaviour
         body.gravityScale = 5f;
         body.freezeRotation = true;
 
-        GetOrAdd<HealthBar>(dummy);
         GetOrAdd<Enemy>(dummy);
     }
 
@@ -92,18 +92,75 @@ public class GameTemplateBootstrap : MonoBehaviour
         collider.isTrigger = true;
         collider.size = Vector2.one;
 
-        EnemyDummy shooterHealth = shooter.GetComponent<EnemyDummy>();
+        EnemyHealth2D shooterHealth = shooter.GetComponent<EnemyHealth2D>();
         if (shooterHealth == null)
         {
-            shooterHealth = shooter.AddComponent<EnemyDummy>();
+            shooterHealth = shooter.AddComponent<EnemyHealth2D>();
         }
 
-        shooterHealth.ConfigureHealth(100f);
+        shooterHealth.Configure(100f);
 
         if (shooter.GetComponent<EnemyShooter>() == null)
         {
             shooter.AddComponent<EnemyShooter>();
         }
+    }
+
+    private static void SetupEnemyAITestArea()
+    {
+        CreateFlyingEnemy("Beta Flying Enemy", new Vector3(26f, 1.5f, 0f));
+        CreateSmallContactEnemy("Beta Small Contact Enemy", new Vector3(32f, -2.25f, 0f));
+        CreateHeavyEnemy("Beta Heavy Enemy", new Vector3(39f, -0.5f, 0f));
+        CreateKitingShooterEnemy("Beta Kiting Shooter Enemy", new Vector3(48f, -1.75f, 0f));
+    }
+
+    private static void CreateFlyingEnemy(string name, Vector3 position)
+    {
+        GameObject enemy = CreateEnemyBase(name, position, Vector3.one, new Color(0.8f, 0.25f, 1f), 50f, true);
+        GetOrAdd<FlyingEnemyAI>(enemy);
+    }
+
+    private static void CreateHeavyEnemy(string name, Vector3 position)
+    {
+        GameObject enemy = CreateEnemyBase(name, position, new Vector3(4f, 4f, 1f), new Color(0.55f, 0.1f, 0.75f), 300f, false);
+        GetOrAdd<HeavyEnemyAI>(enemy);
+    }
+
+    private static void CreateSmallContactEnemy(string name, Vector3 position)
+    {
+        GameObject enemy = CreateEnemyBase(name, position, new Vector3(0.65f, 0.65f, 1f), new Color(1f, 0.25f, 0.25f), 80f, false);
+        GetOrAdd<SmallContactEnemyAI>(enemy);
+    }
+
+    private static void CreateKitingShooterEnemy(string name, Vector3 position)
+    {
+        GameObject enemy = CreateEnemyBase(name, position, Vector3.one, new Color(0.1f, 0.75f, 0.25f), 100f, false);
+        GetOrAdd<KitingShooterEnemyAI>(enemy);
+    }
+
+    private static GameObject CreateEnemyBase(string name, Vector3 position, Vector3 scale, Color color, float health, bool isTrigger)
+    {
+        GameObject enemy = GameObject.Find(name);
+        if (enemy == null)
+        {
+            enemy = new GameObject(name);
+        }
+
+        enemy.transform.position = position;
+        enemy.transform.localScale = scale;
+        PlaceholderSprites.MakeSquare(enemy, color, 10);
+
+        BoxCollider2D collider = GetOrAdd<BoxCollider2D>(enemy);
+        collider.isTrigger = isTrigger;
+        collider.size = Vector2.one;
+
+        Rigidbody2D body = GetOrAdd<Rigidbody2D>(enemy);
+        body.gravityScale = isTrigger ? 0f : 5f;
+        body.freezeRotation = true;
+
+        EnemyHealth2D enemyHealth = GetOrAdd<EnemyHealth2D>(enemy);
+        enemyHealth.Configure(health);
+        return enemy;
     }
 
     private static void CreateSolidBlock(string name, Vector3 position, Vector3 scale, Color color, bool countsAsGround)

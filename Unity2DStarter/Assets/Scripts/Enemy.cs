@@ -29,7 +29,6 @@ public class Enemy : MonoBehaviour, IDamageable
     private Collider2D bodyCollider;
     private Transform player;
     private PlayerStats playerStats;
-    private HealthBar healthBar;
 
     private float health;
     private int facingDirection = 1;
@@ -41,7 +40,6 @@ public class Enemy : MonoBehaviour, IDamageable
     {
         body = GetComponent<Rigidbody2D>();
         bodyCollider = GetComponent<Collider2D>();
-        healthBar = GetComponent<HealthBar>();
         body.freezeRotation = true;
 
         health = maxHealth;
@@ -52,12 +50,6 @@ public class Enemy : MonoBehaviour, IDamageable
             player = playerObj.transform;
             playerStats = playerObj.GetComponent<PlayerStats>();
         }
-    }
-
-    private void Start()
-    {
-        if (healthBar != null)
-            healthBar.SetFraction(1f);
     }
 
     private void Update()
@@ -110,7 +102,7 @@ public class Enemy : MonoBehaviour, IDamageable
             alreadyAttacked = true;
 
             if (playerStats != null)
-                playerStats.TakeDamage(attackDamage);
+                EnemyDamage2D.TryDamagePlayer(player.gameObject, attackDamage);
 
             Invoke(nameof(ResetAttack), timeBetweenAttacks);
         }
@@ -126,9 +118,6 @@ public class Enemy : MonoBehaviour, IDamageable
         health -= amount;
         aggroed = true;
 
-        if (healthBar != null)
-            healthBar.SetFraction(health / maxHealth);
-
         HitFlash2D.Play(gameObject, Color.white, 0.06f);
         GameAudio.PlaySfx("hitSFX", transform.position, 0.65f);
 
@@ -141,7 +130,7 @@ public class Enemy : MonoBehaviour, IDamageable
         if (Time.time < nextContactDamageTime) return;
         if (playerStats == null || collision.gameObject != player.gameObject) return;
 
-        playerStats.TakeDamage(contactDamage);
+        EnemyDamage2D.TryDamagePlayer(player.gameObject, contactDamage);
         nextContactDamageTime = Time.time + contactDamageCooldown;
     }
 

@@ -37,21 +37,9 @@ public class EnemyProjectile : MonoBehaviour
             return;
         }
 
-        PlayerStats playerStats = other.GetComponent<PlayerStats>();
-        if (playerStats == null)
+        if (EnemyDamage2D.TryDamagePlayer(other, damage))
         {
-            return;
-        }
-
-        CircleShield playerShield = playerStats.GetComponentInChildren<CircleShield>();
-        if (playerShield != null)
-        {
-            playerShield.TakeDamage(damage);
             Destroy(gameObject);
-            return;
         }
-
-        playerStats.TakeDamage(damage);
-        Destroy(gameObject);
     }
 }
