@@ -10,9 +10,15 @@ public class PlayerCombat : MonoBehaviour
     [SerializeField] private float triangleManaCost = 30f;
     [SerializeField] private float triangleDamage = 100f;
     [SerializeField] private float triangleCooldown = 2f;
+    [SerializeField] private float triangleFullChargeTime = 0.8f;
+    [SerializeField] private float triangleOverchargeTime = 4f;
+    [SerializeField] private float triangleOverchargeSelfDamage = 20f;
+    [SerializeField] private float triangleMinDamageAsSquarePercent = 0.55f;
+    [SerializeField] private float triangleMinRangeAsSquarePercent = 0.75f;
+    [SerializeField] private float triangleMaxRangeAsSquarePercent = 1.5f;
     [SerializeField] private float circleManaCost = 10f;
     [SerializeField] private float circleShieldHealth = 20f;
-    [SerializeField] private float circleShieldDuration = 3f;
+    [SerializeField] private float circleShieldDuration = 2f;
     [SerializeField] private float circleCooldown = 0.4f;
     [SerializeField] private float circleShieldScale = 4.2f;
     [SerializeField] private float knifeDamage = 10f;
@@ -23,17 +29,25 @@ public class PlayerCombat : MonoBehaviour
     private PlayerMovement2D movement;
     private PlayerStats stats;
     private PlayerActionCounter actionCounter;
+    private SpriteRenderer playerVisualRenderer;
     private float nextCastTime;
+    private float lastCooldownDuration = 1f;
+    private float triangleChargeStartTime;
+    private bool isChargingTriangle;
     private SpellType equippedSpell = SpellType.Square;
 
     public SpellType EquippedSpell => equippedSpell;
     public Color EquippedSpellColor => GetSpellColor(equippedSpell);
+    public float CooldownRemainingPercent => Time.time < nextCastTime
+        ? Mathf.Clamp01((nextCastTime - Time.time) / Mathf.Max(0.01f, lastCooldownDuration))
+        : 0f;
 
     private void Awake()
     {
         movement = GetComponent<PlayerMovement2D>();
         stats = GetComponent<PlayerStats>();
         actionCounter = GetComponent<PlayerActionCounter>();
+        playerVisualRenderer = GetComponentInChildren<SpriteRenderer>();
     }
 
     private void Update()
@@ -54,6 +68,12 @@ public class PlayerCombat : MonoBehaviour
         }
 
         HandleSpellScroll();
+        HandleTriangleCharge();
+
+        if (equippedSpell == SpellType.Triangle)
+        {
+            return;
+        }
 
         if (Input.GetMouseButtonDown(0) && Time.time >= nextCastTime)
         {
@@ -73,7 +93,15 @@ public class PlayerCombat : MonoBehaviour
             }
 
             CastEquippedSpell();
-            nextCastTime = Time.time + GetCooldown(equippedSpell);
+            StartCooldown(GetCooldown(equippedSpell));
+        }
+    }
+
+    private void LateUpdate()
+    {
+        if (isChargingTriangle)
+        {
+            UpdateTriangleChargeFlash(Time.time - triangleChargeStartTime);
         }
     }
 
@@ -82,12 +110,124 @@ public class PlayerCombat : MonoBehaviour
         float scroll = Input.mouseScrollDelta.y;
         if (scroll > 0f)
         {
+            CancelTriangleCharge();
             equippedSpell = (SpellType)(((int)equippedSpell + 1) % 4);
         }
         else if (scroll < 0f)
         {
+            CancelTriangleCharge();
             equippedSpell = (SpellType)(((int)equippedSpell + 3) % 4);
         }
+    }
+
+    private void HandleTriangleCharge()
+    {
+        if (equippedSpell != SpellType.Triangle)
+        {
+            CancelTriangleCharge();
+            return;
+        }
+
+        if (Input.GetMouseButtonDown(0) && Time.time >= nextCastTime && CanCastOffensiveSpell())
+        {
+            isChargingTriangle = true;
+            triangleChargeStartTime = Time.time;
+        }
+
+        if (!isChargingTriangle)
+        {
+            return;
+        }
+
+        float chargeTime = Time.time - triangleChargeStartTime;
+        UpdateTriangleChargeFlash(chargeTime);
+        if (chargeTime >= triangleOverchargeTime)
+        {
+            OverchargeTriangle();
+            return;
+        }
+
+        if (Input.GetMouseButtonUp(0))
+        {
+            ReleaseTriangle(chargeTime);
+        }
+    }
+
+    private bool CanCastOffensiveSpell()
+    {
+        return stats != null
+            && !stats.IsBlocking
+            && GetComponentInChildren<CircleShield>() == null;
+    }
+
+    private void CancelTriangleCharge()
+    {
+        isChargingTriangle = false;
+        triangleChargeStartTime = 0f;
+        RestorePlayerVisualColor();
+    }
+
+    private void UpdateTriangleChargeFlash(float chargeTime)
+    {
+        if (playerVisualRenderer == null)
+        {
+            playerVisualRenderer = GetComponentInChildren<SpriteRenderer>();
+        }
+
+        if (playerVisualRenderer == null)
+        {
+            return;
+        }
+
+        float chargePercent = Mathf.Clamp01(chargeTime / Mathf.Max(0.01f, triangleFullChargeTime));
+        float dangerPercent = Mathf.Clamp01(chargeTime / Mathf.Max(0.01f, triangleOverchargeTime));
+        float flashSpeed = Mathf.Lerp(6f, 16f, dangerPercent);
+        float pulse = Mathf.PingPong(Time.time * flashSpeed, 1f);
+        Color chargeColor = Color.Lerp(new Color(1f, 0.85f, 0.25f), new Color(1f, 0.25f, 0.08f), dangerPercent);
+        float tintStrength = Mathf.Lerp(0.25f, 0.75f, Mathf.Max(chargePercent, dangerPercent));
+        playerVisualRenderer.color = Color.Lerp(Color.white, chargeColor, pulse * tintStrength);
+    }
+
+    private void RestorePlayerVisualColor()
+    {
+        if (playerVisualRenderer == null)
+        {
+            playerVisualRenderer = GetComponentInChildren<SpriteRenderer>();
+        }
+
+        if (playerVisualRenderer != null)
+        {
+            playerVisualRenderer.color = Color.white;
+        }
+    }
+
+    private void ReleaseTriangle(float chargeTime)
+    {
+        CancelTriangleCharge();
+
+        if (!CanCastOffensiveSpell())
+        {
+            return;
+        }
+
+        if (!stats.TryPayCost(triangleManaCost, spellManaRegenDelay))
+        {
+            return;
+        }
+
+        float chargePercent = Mathf.Clamp01(chargeTime / Mathf.Max(0.01f, triangleFullChargeTime));
+        RecordAction(chargePercent >= 1f ? "spell_triangle_charged" : "spell_triangle_undercharged");
+        CastProjectile(SpellType.Triangle, chargePercent);
+        StartCooldown(triangleCooldown);
+    }
+
+    private void OverchargeTriangle()
+    {
+        CancelTriangleCharge();
+        RecordAction("spell_triangle_overcharge");
+        stats.TryPayCost(triangleManaCost, spellManaRegenDelay);
+        stats.TakeDirectDamage(triangleOverchargeSelfDamage);
+        StartCooldown(triangleCooldown);
     }
 
     private void CastEquippedSpell()
@@ -105,7 +245,7 @@ public class PlayerCombat : MonoBehaviour
         else
         {
             RecordAction(equippedSpell == SpellType.Triangle ? "spell_triangle" : "spell_square");
-            CastProjectile();
+            CastProjectile(equippedSpell, 1f);
         }
     }
 
@@ -122,20 +262,27 @@ public class PlayerCombat : MonoBehaviour
         }
     }
 
-    private void CastProjectile()
+    private void StartCooldown(float duration)
+    {
+        lastCooldownDuration = Mathf.Max(0.01f, duration);
+        nextCastTime = Time.time + lastCooldownDuration;
+    }
+
+    private void CastProjectile(SpellType spellType, float chargePercent)
     {
         int direction = movement != null ? movement.FacingDirection : 1;
         Vector3 spawnPosition = transform.position + new Vector3(direction * 0.75f, 0f, 0f);
 
         GameObject projectile = new GameObject("Spell Projectile");
         projectile.transform.position = spawnPosition;
-        projectile.transform.localScale = new Vector3(direction > 0 ? -1f : 1f, 1f, 1f);
+        Vector3 visualScale = GetProjectileVisualScale(spellType, direction);
+        projectile.transform.localScale = visualScale;
         SpriteRenderer renderer = projectile.AddComponent<SpriteRenderer>();
-        Sprite[] animationFrames = equippedSpell == SpellType.Triangle
+        Sprite[] animationFrames = spellType == SpellType.Triangle
             ? MagicAttackSprites.TriangleFrames
             : MagicAttackSprites.SquareFrames;
-        renderer.sprite = MagicAttackSprites.FirstOrFallback(animationFrames, ShapeSprites.Get(equippedSpell));
-        renderer.color = animationFrames.Length > 0 ? Color.white : GetSpellColor(equippedSpell);
+        renderer.sprite = MagicAttackSprites.FirstOrFallback(animationFrames, ShapeSprites.Get(spellType));
+        renderer.color = animationFrames.Length > 0 ? Color.white : GetSpellColor(spellType);
         renderer.sortingOrder = 20;
         SpriteLit.Apply(renderer);
 
@@ -146,14 +293,15 @@ public class PlayerCombat : MonoBehaviour
 
         BoxCollider2D collider = projectile.AddComponent<BoxCollider2D>();
         collider.isTrigger = true;
+        collider.size = GetProjectileColliderSize(spellType);
 
         Rigidbody2D body = projectile.AddComponent<Rigidbody2D>();
         body.bodyType = RigidbodyType2D.Kinematic;
         body.gravityScale = 0f;
 
         SpellProjectile spell = projectile.AddComponent<SpellProjectile>();
-        spell.Launch(direction, projectileSpeed, projectileRange, GetDamage(equippedSpell));
-        GameAudio.PlaySfx(equippedSpell == SpellType.Triangle ? "triangleSF" : "squareSF", transform.position, 0.85f);
+        spell.Launch(direction, projectileSpeed, GetProjectileRange(spellType, chargePercent), GetDamage(spellType, chargePercent));
+        GameAudio.PlaySfx(spellType == SpellType.Triangle ? "triangleSF" : "squareSF", transform.position, 0.85f);
     }
 
     private void CastCircleShield()
@@ -166,13 +314,13 @@ public class PlayerCombat : MonoBehaviour
 
         GameObject shieldObject = new GameObject("Circle Shield");
         shieldObject.transform.SetParent(transform, false);
-        shieldObject.transform.localPosition = Vector3.zero;
+        shieldObject.transform.localPosition = new Vector3(0.06f, 0f, 0f);
         shieldObject.transform.localScale = new Vector3(circleShieldScale * 0.62f, circleShieldScale * 0.62f, 1f);
 
         SpriteRenderer renderer = shieldObject.AddComponent<SpriteRenderer>();
         Sprite shieldSprite = MagicAttackSprites.ShieldSprite;
         renderer.sprite = shieldSprite != null ? shieldSprite : ShapeSprites.Circle;
-        renderer.color = shieldSprite != null ? new Color(1f, 1f, 1f, 0.58f) : new Color(0.45f, 1f, 0.55f, 0.35f);
+        renderer.color = shieldSprite != null ? new Color(1f, 1f, 1f, 0.9f) : new Color(0.45f, 1f, 0.55f, 0.35f);
         SpriteLit.Apply(renderer);
         renderer.sortingOrder = 8;
 
@@ -239,15 +387,49 @@ public class PlayerCombat : MonoBehaviour
         }
     }
 
-    private float GetDamage(SpellType spellType)
+    private float GetDamage(SpellType spellType, float chargePercent = 1f)
     {
         switch (spellType)
         {
             case SpellType.Triangle:
-                return triangleDamage;
+                float easedCharge = Mathf.Clamp01(chargePercent) * Mathf.Clamp01(chargePercent);
+                float minDamage = squareDamage * triangleMinDamageAsSquarePercent;
+                return Mathf.Lerp(minDamage, triangleDamage, easedCharge);
             default:
                 return squareDamage;
         }
+    }
+
+    private float GetProjectileRange(SpellType spellType, float chargePercent)
+    {
+        if (spellType != SpellType.Triangle)
+        {
+            return projectileRange;
+        }
+
+        float rangePercent = Mathf.Lerp(
+            triangleMinRangeAsSquarePercent,
+            triangleMaxRangeAsSquarePercent,
+            Mathf.Clamp01(chargePercent));
+        return projectileRange * rangePercent;
+    }
+
+    private Vector3 GetProjectileVisualScale(SpellType spellType, int direction)
+    {
+        float xDirection = direction > 0 ? -1f : 1f;
+        if (spellType == SpellType.Triangle)
+        {
+            return new Vector3(xDirection * 1.15f, 0.55f, 1f);
+        }
+
+        return new Vector3(xDirection * 1.35f, 1.25f, 1f);
+    }
+
+    private Vector2 GetProjectileColliderSize(SpellType spellType)
+    {
+        return spellType == SpellType.Triangle
+            ? new Vector2(0.95f, 0.35f)
+            : new Vector2(1.35f, 1.15f);
     }
 
     private float GetCooldown(SpellType spellType)

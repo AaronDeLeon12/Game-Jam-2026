@@ -97,6 +97,23 @@ public class PlayerStats : MonoBehaviour
         }
     }
 
+    public void TakeDirectDamage(float damage)
+    {
+        if (isDead)
+        {
+            return;
+        }
+
+        health = Mathf.Max(0f, health - Mathf.Max(0f, damage));
+        HitFlash2D.Play(gameObject, new Color(1f, 0.72f, 0.1f), 0.12f);
+        GameAudio.PlaySfx("playerDamagedSF2", transform.position, 0.8f);
+
+        if (health <= 0f)
+        {
+            isDead = true;
+        }
+    }
+
     public bool TryPayCost(float manaCost, float regenDelay)
     {
         if (isDead)

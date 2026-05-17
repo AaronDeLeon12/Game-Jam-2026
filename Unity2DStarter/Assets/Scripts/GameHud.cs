@@ -110,6 +110,20 @@ public class GameHud : MonoBehaviour
                 break;
         }
 
+        DrawCooldownOverlay(rect, playerCombat.CooldownRemainingPercent, alpha);
+        GUI.color = Color.white;
+    }
+
+    private static void DrawCooldownOverlay(Rect rect, float percent, float alpha)
+    {
+        percent = Mathf.Clamp01(percent);
+        if (percent <= 0f)
+        {
+            return;
+        }
+
+        GUI.color = new Color(0.45f, 0.45f, 0.45f, alpha * 0.72f);
+        GUI.DrawTexture(new Rect(rect.x, rect.y + rect.height * (1f - percent), rect.width, rect.height * percent), Texture2D.whiteTexture);
         GUI.color = Color.white;
     }
 

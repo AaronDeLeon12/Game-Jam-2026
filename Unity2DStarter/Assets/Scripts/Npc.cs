@@ -75,28 +75,14 @@ public class Npc : MonoBehaviour, IInteractable
         GUI.DrawTexture(rect, Texture2D.whiteTexture);
         GUI.color = Color.white;
 
-        GUIStyle nameStyle = new GUIStyle(GUI.skin.label)
-        {
-            fontSize = 20,
-            fontStyle = FontStyle.Bold,
-            normal = { textColor = new Color(1f, 0.85f, 0.5f) }
-        };
+        GUIStyle nameStyle = DialogueUI.MakeLabelStyle(20, new Color(1f, 0.85f, 0.5f));
+        nameStyle.fontStyle = FontStyle.Bold;
         GUI.Label(new Rect(rect.x + 22f, rect.y + 14f, rect.width - 44f, 28f), npcName, nameStyle);
 
-        GUIStyle textStyle = new GUIStyle(GUI.skin.label)
-        {
-            fontSize = 20,
-            wordWrap = true,
-            normal = { textColor = Color.white }
-        };
+        GUIStyle textStyle = DialogueUI.MakeLabelStyle(20, Color.white);
         GUI.Label(new Rect(rect.x + 22f, rect.y + 48f, rect.width - 44f, rect.height - 84f), lines[index], textStyle);
 
-        GUIStyle hintStyle = new GUIStyle(GUI.skin.label)
-        {
-            fontSize = 14,
-            alignment = TextAnchor.LowerRight,
-            normal = { textColor = new Color(0.7f, 0.7f, 0.7f) }
-        };
+        GUIStyle hintStyle = DialogueUI.MakeLabelStyle(14, new Color(0.7f, 0.7f, 0.7f), TextAnchor.LowerRight);
         GUI.Label(new Rect(rect.x, rect.y + rect.height - 28f, rect.width - 18f, 20f),
             index < lines.Length - 1 ? "E - continue" : "E - end", hintStyle);
     }

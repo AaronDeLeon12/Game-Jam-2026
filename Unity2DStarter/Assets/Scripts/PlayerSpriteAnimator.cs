@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -8,28 +9,95 @@ public class PlayerSpriteAnimator : MonoBehaviour
     [SerializeField] private string walkFramePrefix = "walk";
     [SerializeField] private int walkFrameCount = 8;
     [SerializeField] private float walkFramesPerSecond = 8f;
+    [SerializeField] private float jumpFramesPerSecond = 8f;
+    [SerializeField] private float crouchFramesPerSecond = 10f;
+    [SerializeField] private float crouchWalkFramesPerSecond = 8f;
     [SerializeField] private float minimumWalkSpeed = 0.05f;
     [SerializeField] private float targetWorldHeight = 1.45f;
+    [SerializeField] private float crouchVisualScaleMultiplier = 0.72f;
 
     private readonly List<Sprite> walkFrames = new List<Sprite>();
+    private readonly List<Sprite> jumpFrames = new List<Sprite>();
+    private readonly List<Sprite> crouchFrames = new List<Sprite>();
+    private readonly List<Sprite> crouchWalkFrames = new List<Sprite>();
+    private readonly List<Sprite> teleportVanishFrames = new List<Sprite>();
+    private readonly List<Sprite> teleportAppearFrames = new List<Sprite>();
     private SpriteRenderer spriteRenderer;
     private Rigidbody2D body;
     private PlayerMovement2D movement;
     private Sprite idleSprite;
     private float frameTimer;
     private int frameIndex;
+    private bool wasWalking;
+    private bool wasGrounded = true;
+    private bool wasDucking;
+    private float landingFrameUntil;
+    private float jumpStartFrameUntil;
+    private bool crouchIntroPlaying;
+    private bool isPlayingExternalAnimation;
+    private int lastFacingDirection = 1;
     public bool HasLoadedSprites => walkFrames.Count > 0;
 
     private static readonly Rect[] CharacterSheetFrameRects =
     {
-        new Rect(105f, 125f, 220f, 395f),
-        new Rect(410f, 120f, 260f, 405f),
-        new Rect(735f, 118f, 265f, 410f),
-        new Rect(1058f, 120f, 270f, 410f),
-        new Rect(95f, 512f, 260f, 405f),
-        new Rect(410f, 505f, 270f, 420f),
-        new Rect(735f, 512f, 275f, 410f),
-        new Rect(1065f, 505f, 250f, 420f)
+        new Rect(86f, 90f, 250f, 350f),
+        new Rect(380f, 90f, 270f, 350f),
+        new Rect(682f, 88f, 270f, 352f),
+        new Rect(1000f, 90f, 270f, 352f),
+        new Rect(82f, 455f, 245f, 335f),
+        new Rect(382f, 450f, 270f, 340f),
+        new Rect(690f, 455f, 260f, 335f),
+        new Rect(1030f, 455f, 235f, 335f)
+    };
+
+    private static readonly Rect[] JumpSheetFrameRects =
+    {
+        new Rect(55f, 315f, 150f, 340f),
+        new Rect(270f, 340f, 190f, 295f),
+        new Rect(500f, 330f, 205f, 310f),
+        new Rect(730f, 255f, 180f, 365f),
+        new Rect(930f, 230f, 175f, 390f),
+        new Rect(1140f, 320f, 180f, 340f),
+        new Rect(1340f, 350f, 160f, 295f),
+        new Rect(1570f, 315f, 150f, 340f)
+    };
+
+    private static readonly Rect[] CrouchSheetFrameRects =
+    {
+        new Rect(35f, 315f, 190f, 350f),
+        new Rect(250f, 345f, 230f, 315f),
+        new Rect(470f, 390f, 235f, 275f),
+        new Rect(690f, 410f, 220f, 255f),
+        new Rect(910f, 420f, 210f, 245f),
+        new Rect(1130f, 340f, 230f, 325f),
+        new Rect(1350f, 360f, 220f, 305f),
+        new Rect(1580f, 315f, 190f, 350f)
+    };
+
+    private static readonly Rect[] CrouchWalkSheetFrameRects =
+    {
+        new Rect(20f, 380f, 200f, 300f),
+        new Rect(180f, 375f, 220f, 305f),
+        new Rect(355f, 360f, 220f, 320f),
+        new Rect(540f, 375f, 220f, 305f),
+        new Rect(725f, 360f, 200f, 320f),
+        new Rect(915f, 375f, 220f, 305f),
+        new Rect(1100f, 360f, 220f, 320f),
+        new Rect(1285f, 375f, 220f, 305f)
+    };
+
+    private static readonly Rect[] TeleportVanishRects =
+    {
+        new Rect(25f, 115f, 210f, 250f),
+        new Rect(235f, 105f, 265f, 285f),
+        new Rect(765f, 115f, 240f, 260f)
+    };
+
+    private static readonly Rect[] TeleportAppearRects =
+    {
+        new Rect(45f, 555f, 185f, 205f),
+        new Rect(240f, 530f, 265f, 285f),
+        new Rect(760f, 535f, 245f, 265f)
     };
 
     public static Sprite LoadWalkSprite(int frameNumber)
@@ -56,6 +124,7 @@ public class PlayerSpriteAnimator : MonoBehaviour
         movement = GetComponent<PlayerMovement2D>();
 
         LoadWalkFrames();
+        LoadStateFrames();
         ApplyIdleFrame();
         NormalizeSpriteScale();
     }
@@ -82,12 +151,22 @@ public class PlayerSpriteAnimator : MonoBehaviour
             LoadWalkFrames();
         }
 
+        if (jumpFrames.Count == 0 || crouchFrames.Count == 0 || crouchWalkFrames.Count == 0)
+        {
+            LoadStateFrames();
+        }
+
         ApplyIdleFrame();
     }
 
     private void Update()
     {
         if (spriteRenderer == null || walkFrames.Count == 0 || PauseMenu.IsPaused)
+        {
+            return;
+        }
+
+        if (isPlayingExternalAnimation)
         {
             return;
         }
@@ -100,12 +179,70 @@ public class PlayerSpriteAnimator : MonoBehaviour
         int facingDirection = movement != null ? movement.FacingDirection : (body.linearVelocity.x < 0f ? -1 : 1);
         spriteRenderer.flipX = facingDirection < 0;
 
-        bool isWalking = Mathf.Abs(body.linearVelocity.x) > minimumWalkSpeed;
+        bool isGrounded = movement != null ? movement.IsGroundedNow : Mathf.Abs(body.linearVelocity.y) < 0.05f;
+        bool isDucking = movement != null && movement.IsDucking;
+        bool hasMoveInput = Mathf.Abs(Input.GetAxisRaw("Horizontal")) > 0.01f
+            || Input.GetKey(KeyCode.A)
+            || Input.GetKey(KeyCode.D)
+            || Input.GetKey(KeyCode.LeftArrow)
+            || Input.GetKey(KeyCode.RightArrow);
+        bool isWalking = hasMoveInput || Mathf.Abs(body.linearVelocity.x) > minimumWalkSpeed;
+
+        if (!wasGrounded && isGrounded)
+        {
+            landingFrameUntil = Time.time + 0.12f;
+        }
+        else if (wasGrounded && !isGrounded)
+        {
+            jumpStartFrameUntil = Time.time + 0.12f;
+            frameTimer = 0f;
+            frameIndex = 0;
+        }
+
+        if (!wasDucking && isDucking)
+        {
+            crouchIntroPlaying = true;
+            frameTimer = 0f;
+            frameIndex = 0;
+        }
+
+        wasGrounded = isGrounded;
+        wasDucking = isDucking;
+
+        if (Time.time < landingFrameUntil && jumpFrames.Count > 0)
+        {
+            ApplySprite(jumpFrames[jumpFrames.Count - 1]);
+            return;
+        }
+
+        if (!isGrounded && jumpFrames.Count > 0)
+        {
+            UpdateJumpAnimation();
+            return;
+        }
+
+        if (isDucking)
+        {
+            UpdateCrouchAnimation(isWalking);
+            return;
+        }
+
         if (!isWalking)
         {
             ApplyIdleFrame();
             return;
         }
+
+        if (!wasWalking || facingDirection != lastFacingDirection)
+        {
+            frameTimer = 0f;
+            frameIndex = Mathf.Min(1, walkFrames.Count - 1);
+            spriteRenderer.sprite = walkFrames[frameIndex];
+            NormalizeSpriteScale();
+        }
+
+        wasWalking = true;
+        lastFacingDirection = facingDirection;
 
         frameTimer += Time.deltaTime;
         float frameDuration = 1f / Mathf.Max(1f, walkFramesPerSecond);
@@ -113,8 +250,7 @@ public class PlayerSpriteAnimator : MonoBehaviour
         {
             frameTimer -= frameDuration;
             frameIndex = (frameIndex + 1) % walkFrames.Count;
-            spriteRenderer.sprite = walkFrames[frameIndex];
-            NormalizeSpriteScale();
+            ApplySprite(walkFrames[frameIndex]);
         }
     }
 
@@ -144,6 +280,21 @@ public class PlayerSpriteAnimator : MonoBehaviour
         idleSprite = walkFrames[0];
     }
 
+    private void LoadStateFrames()
+    {
+        jumpFrames.Clear();
+        crouchFrames.Clear();
+        crouchWalkFrames.Clear();
+        teleportVanishFrames.Clear();
+        teleportAppearFrames.Clear();
+
+        jumpFrames.AddRange(LoadSheetFrames("Player/States/NinaSaltando", JumpSheetFrameRects, "jump"));
+        crouchFrames.AddRange(LoadSheetFrames("Player/States/NinaSeAgacha", CrouchSheetFrameRects, "crouch"));
+        crouchWalkFrames.AddRange(LoadSheetFrames("Player/States/caminandoAgachada", CrouchWalkSheetFrameRects, "crouch_walk"));
+        teleportVanishFrames.AddRange(LoadSheetFrames("Player/States/teleportCycle", TeleportVanishRects, "teleport_vanish"));
+        teleportAppearFrames.AddRange(LoadSheetFrames("Player/States/teleportCycle", TeleportAppearRects, "teleport_appear"));
+    }
+
     private void ApplyIdleFrame()
     {
         if (spriteRenderer == null || idleSprite == null)
@@ -153,11 +304,133 @@ public class PlayerSpriteAnimator : MonoBehaviour
 
         frameTimer = 0f;
         frameIndex = 0;
+        wasWalking = false;
         spriteRenderer.drawMode = SpriteDrawMode.Simple;
-        spriteRenderer.sprite = idleSprite;
+        ApplySprite(idleSprite);
         spriteRenderer.color = Color.white;
         spriteRenderer.sortingOrder = 10;
-        NormalizeSpriteScale();
+    }
+
+    private void UpdateJumpAnimation()
+    {
+        if (Time.time < jumpStartFrameUntil)
+        {
+            ApplySprite(jumpFrames[0]);
+            return;
+        }
+
+        int firstLoopFrame = Mathf.Min(2, jumpFrames.Count - 1);
+        int loopCount = Mathf.Min(4, jumpFrames.Count - firstLoopFrame);
+        if (loopCount <= 0)
+        {
+            ApplySprite(jumpFrames[0]);
+            return;
+        }
+
+        frameTimer += Time.deltaTime;
+        float frameDuration = 1f / Mathf.Max(1f, jumpFramesPerSecond);
+        while (frameTimer >= frameDuration)
+        {
+            frameTimer -= frameDuration;
+            frameIndex = (frameIndex + 1) % loopCount;
+        }
+
+        ApplySprite(jumpFrames[firstLoopFrame + frameIndex]);
+    }
+
+    private void UpdateCrouchAnimation(bool isWalking)
+    {
+        if (crouchIntroPlaying && crouchFrames.Count > 0)
+        {
+            frameTimer += Time.deltaTime;
+            float frameDuration = 1f / Mathf.Max(1f, crouchFramesPerSecond);
+            while (frameTimer >= frameDuration)
+            {
+                frameTimer -= frameDuration;
+                frameIndex++;
+            }
+
+            int lastIntroFrame = Mathf.Min(3, crouchFrames.Count - 1);
+            if (frameIndex >= lastIntroFrame)
+            {
+                frameIndex = lastIntroFrame;
+                crouchIntroPlaying = false;
+            }
+
+            ApplySprite(crouchFrames[frameIndex], false, crouchVisualScaleMultiplier);
+            return;
+        }
+
+        if (isWalking && crouchWalkFrames.Count > 0)
+        {
+            frameTimer += Time.deltaTime;
+            float frameDuration = 1f / Mathf.Max(1f, crouchWalkFramesPerSecond);
+            while (frameTimer >= frameDuration)
+            {
+                frameTimer -= frameDuration;
+                frameIndex = (frameIndex + 1) % crouchWalkFrames.Count;
+            }
+
+            ApplySprite(crouchWalkFrames[frameIndex], false, crouchVisualScaleMultiplier);
+            return;
+        }
+
+        if (crouchFrames.Count > 0)
+        {
+            ApplySprite(crouchFrames[Mathf.Min(3, crouchFrames.Count - 1)], false, crouchVisualScaleMultiplier);
+        }
+    }
+
+    public IEnumerator PlayTeleportVanish(float duration)
+    {
+        yield return PlayExternalAnimation(teleportVanishFrames, duration);
+    }
+
+    public IEnumerator PlayTeleportAppear(float duration)
+    {
+        yield return PlayExternalAnimation(teleportAppearFrames, duration);
+    }
+
+    private IEnumerator PlayExternalAnimation(List<Sprite> frames, float duration)
+    {
+        if (frames.Count == 0)
+        {
+            yield return new WaitForSeconds(duration);
+            yield break;
+        }
+
+        isPlayingExternalAnimation = true;
+
+        int[] sequence = frames.Count >= 3
+            ? new[] { 0, 1, 0, 1, 2 }
+            : new[] { 0, 1, 0, 1 };
+        float frameDuration = duration / sequence.Length;
+
+        for (int i = 0; i < sequence.Length; i++)
+        {
+            ApplySprite(frames[Mathf.Clamp(sequence[i], 0, frames.Count - 1)], true);
+            yield return new WaitForSeconds(frameDuration);
+        }
+
+        isPlayingExternalAnimation = false;
+    }
+
+    private void ApplySprite(Sprite sprite, bool normalizeHeight = true, float relativeScaleMultiplier = 1f)
+    {
+        if (spriteRenderer == null || sprite == null)
+        {
+            return;
+        }
+
+        spriteRenderer.sprite = sprite;
+        if (normalizeHeight)
+        {
+            NormalizeSpriteScale();
+        }
+        else
+        {
+            ApplyScaleRelativeToStanding(sprite, relativeScaleMultiplier);
+        }
     }
 
     private void NormalizeSpriteScale()
@@ -177,13 +450,27 @@ public class PlayerSpriteAnimator : MonoBehaviour
         spriteRenderer.transform.localScale = new Vector3(scale, scale, 1f);
     }
 
+    private void ApplyScaleRelativeToStanding(Sprite sprite, float relativeScaleMultiplier)
+    {
+        if (sprite == null || idleSprite == null || idleSprite.bounds.size.y <= 0f)
+        {
+            NormalizeSpriteScale();
+            return;
+        }
+
+        float standingScale = targetWorldHeight / idleSprite.bounds.size.y;
+        float relativeHeight = sprite.rect.height / Mathf.Max(1f, idleSprite.rect.height);
+        float scale = standingScale * relativeHeight * relativeScaleMultiplier;
+        spriteRenderer.transform.localScale = new Vector3(scale, scale, 1f);
+    }
+
     private static Sprite CreateCroppedSprite(Texture2D texture, string spriteName)
     {
         try
         {
             Color background = texture.GetPixel(2, texture.height - 2);
-            Rect crop = FindVisibleRect(texture, background);
             Texture2D transparentTexture = CreateTransparentTexture(texture, background);
+            Rect crop = FindVisibleRect(transparentTexture);
             Sprite sprite = Sprite.Create(transparentTexture, crop, new Vector2(0.5f, 0.5f), crop.height);
             sprite.name = spriteName;
             return sprite;
@@ -196,7 +483,11 @@ public class PlayerSpriteAnimator : MonoBehaviour
 
     private static Sprite LoadCharacterSheetFrame(int frameNumber)
     {
-        Texture2D sheet = Resources.Load<Texture2D>("Player/personajePrincipal");
+        Texture2D sheet = Resources.Load<Texture2D>("Player/personajePrincipalClean");
+        if (sheet == null)
+        {
+            sheet = Resources.Load<Texture2D>("Player/personajePrincipal");
+        }
         if (sheet == null || frameNumber < 1 || frameNumber > CharacterSheetFrameRects.Length)
         {
             return null;
@@ -226,28 +517,54 @@ public class PlayerSpriteAnimator : MonoBehaviour
         rawFrame.SetPixels(pixels);
         rawFrame.Apply(false, false);
 
-        Rect crop = FindVisibleRect(rawFrame, background);
         Texture2D transparentFrame = CreateTransparentTexture(rawFrame, background);
+        Rect crop = FindVisibleRect(transparentFrame);
         Sprite sprite = Sprite.Create(transparentFrame, crop, new Vector2(0.5f, 0.5f), crop.height);
         sprite.name = spriteName;
         return sprite;
     }
 
+    private static Sprite[] LoadSheetFrames(string resourcePath, Rect[] topLeftRects, string spritePrefix)
+    {
+        Texture2D sheet = Resources.Load<Texture2D>(resourcePath);
+        if (sheet == null)
+        {
+            return new Sprite[0];
+        }
+
+        List<Sprite> frames = new List<Sprite>();
+        for (int i = 0; i < topLeftRects.Length; i++)
+        {
+            try
+            {
+                frames.Add(CreateFrameFromSheet(sheet, topLeftRects[i], $"{spritePrefix}_{i + 1}"));
+            }
+            catch (UnityException)
+            {
+            }
+        }
+
+        return frames.ToArray();
+    }
+
     private static Texture2D CreateTransparentTexture(Texture2D source, Color background)
     {
         Color[] pixels = source.GetPixels();
+        bool[] backgroundMask = FindEdgeBackgroundMask(source, background);
         for (int i = 0; i < pixels.Length; i++)
         {
-            if (IsBackground(pixels[i], background))
+            if (backgroundMask[i])
             {
                 pixels[i] = Color.clear;
             }
         }
 
+        RemoveSmallVisibleIslands(pixels, source.width, source.height, 24);
+
         Texture2D texture = new Texture2D(source.width, source.height, TextureFormat.RGBA32, false);
         texture.SetPixels(pixels);
         texture.Apply(false, false);
-        texture.filterMode = FilterMode.Bilinear;
+        texture.filterMode = FilterMode.Point;
         texture.wrapMode = TextureWrapMode.Clamp;
         return texture;
     }
@@ -255,6 +572,7 @@ public class PlayerSpriteAnimator : MonoBehaviour
     private static Rect FindVisibleRect(Texture2D texture, Color background)
     {
         Color[] pixels = texture.GetPixels();
+        bool[] backgroundMask = FindEdgeBackgroundMask(texture, background);
         int minX = texture.width;
         int minY = texture.height;
         int maxX = 0;
@@ -264,8 +582,9 @@ public class PlayerSpriteAnimator : MonoBehaviour
         {
             for (int x = 0; x < texture.width; x++)
             {
-                Color pixel = pixels[y * texture.width + x];
-                if (pixel.a <= 0.08f || IsBackground(pixel, background))
+                int index = y * texture.width + x;
+                Color pixel = pixels[index];
+                if (pixel.a <= 0.08f || backgroundMask[index])
                 {
                     continue;
                 }
@@ -282,11 +601,54 @@ public class PlayerSpriteAnimator : MonoBehaviour
             return new Rect(0f, 0f, texture.width, texture.height);
         }
 
-        const int padding = 8;
-        minX = Mathf.Max(0, minX - padding);
-        minY = Mathf.Max(0, minY - padding);
-        maxX = Mathf.Min(texture.width - 1, maxX + padding);
-        maxY = Mathf.Min(texture.height - 1, maxY + padding);
+        const int horizontalPadding = 8;
+        const int topPadding = 8;
+        const int bottomPadding = 16;
+        minX = Mathf.Max(0, minX - horizontalPadding);
+        minY = Mathf.Max(0, minY - bottomPadding);
+        maxX = Mathf.Min(texture.width - 1, maxX + horizontalPadding);
+        maxY = Mathf.Min(texture.height - 1, maxY + topPadding);
+
+        return new Rect(minX, minY, maxX - minX + 1, maxY - minY + 1);
+    }
+
+    private static Rect FindVisibleRect(Texture2D texture)
+    {
+        Color[] pixels = texture.GetPixels();
+        int minX = texture.width;
+        int minY = texture.height;
+        int maxX = 0;
+        int maxY = 0;
+
+        for (int y = 0; y < texture.height; y++)
+        {
+            for (int x = 0; x < texture.width; x++)
+            {
+                Color pixel = pixels[y * texture.width + x];
+                if (pixel.a <= 0.08f)
+                {
+                    continue;
+                }
+
+                minX = Mathf.Min(minX, x);
+                minY = Mathf.Min(minY, y);
+                maxX = Mathf.Max(maxX, x);
+                maxY = Mathf.Max(maxY, y);
+            }
+        }
+
+        if (minX > maxX || minY > maxY)
+        {
+            return new Rect(0f, 0f, texture.width, texture.height);
+        }
+
+        const int horizontalPadding = 8;
+        const int topPadding = 8;
+        const int bottomPadding = 16;
+        minX = Mathf.Max(0, minX - horizontalPadding);
+        minY = Mathf.Max(0, minY - bottomPadding);
+        maxX = Mathf.Min(texture.width - 1, maxX + horizontalPadding);
+        maxY = Mathf.Min(texture.height - 1, maxY + topPadding);
 
         return new Rect(minX, minY, maxX - minX + 1, maxY - minY + 1);
     }
@@ -295,6 +657,113 @@ public class PlayerSpriteAnimator : MonoBehaviour
     {
         float distance = Mathf.Abs(color.r - background.r) + Mathf.Abs(color.g - background.g) + Mathf.Abs(color.b - background.b);
         bool nearlyWhite = color.r > 0.92f && color.g > 0.92f && color.b > 0.92f;
-        return distance < 0.18f || nearlyWhite;
+        return distance < 0.16f || nearlyWhite;
+    }
+
+    private static bool[] FindEdgeBackgroundMask(Texture2D texture, Color background)
+    {
+        Color[] pixels = texture.GetPixels();
+        bool[] visited = new bool[pixels.Length];
+        Queue<int> queue = new Queue<int>();
+
+        void TryEnqueue(int x, int y)
+        {
+            if (x < 0 || x >= texture.width || y < 0 || y >= texture.height)
+            {
+                return;
+            }
+
+            int index = y * texture.width + x;
+            if (visited[index] || !IsBackground(pixels[index], background))
+            {
+                return;
+            }
+
+            visited[index] = true;
+            queue.Enqueue(index);
+        }
+
+        for (int x = 0; x < texture.width; x++)
+        {
+            TryEnqueue(x, 0);
+            TryEnqueue(x, texture.height - 1);
+        }
+
+        for (int y = 0; y < texture.height; y++)
+        {
+            TryEnqueue(0, y);
+            TryEnqueue(texture.width - 1, y);
+        }
+
+        while (queue.Count > 0)
+        {
+            int index = queue.Dequeue();
+            int x = index % texture.width;
+            int y = index / texture.width;
+
+            TryEnqueue(x + 1, y);
+            TryEnqueue(x - 1, y);
+            TryEnqueue(x, y + 1);
+            TryEnqueue(x, y - 1);
+        }
+
+        return visited;
+    }
+
+    private static void RemoveSmallVisibleIslands(Color[] pixels, int width, int height, int minArea)
+    {
+        bool[] visited = new bool[pixels.Length];
+        Queue<int> queue = new Queue<int>();
+        List<int> component = new List<int>();
+
+        for (int start = 0; start < pixels.Length; start++)
+        {
+            if (visited[start] || pixels[start].a <= 0.08f)
+            {
+                continue;
+            }
+
+            visited[start] = true;
+            queue.Enqueue(start);
+            component.Clear();
+
+            while (queue.Count > 0)
+            {
+                int index = queue.Dequeue();
+                component.Add(index);
+                int x = index % width;
+                int y = index / width;
+
+                TryVisit(x + 1, y);
+                TryVisit(x - 1, y);
+                TryVisit(x, y + 1);
+                TryVisit(x, y - 1);
+            }
+
+            if (component.Count < minArea)
+            {
+                for (int i = 0; i < component.Count; i++)
+                {
+                    pixels[component[i]] = Color.clear;
+                }
+            }
+        }
+
+        void TryVisit(int x, int y)
+        {
+            if (x < 0 || x >= width || y < 0 || y >= height)
+            {
+                return;
+            }
+
+            int index = y * width + x;
+            if (visited[index] || pixels[index].a <= 0.08f)
+            {
+                return;
+            }
+
+            visited[index] = true;
+            queue.Enqueue(index);
+        }
     }
 }

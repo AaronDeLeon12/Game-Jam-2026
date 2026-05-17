@@ -12,7 +12,7 @@ public class PlayerMovement2D : MonoBehaviour
     [SerializeField] private float fallGravityMultiplier = 1.7f;
     [SerializeField] private float glideGravityScale = 1.25f;
     [SerializeField] private float dashDistance = 3f;
-    [SerializeField] private float dashDisappearTime = 0.12f;
+    [SerializeField] private float dashDisappearTime = 0.4f;
     [SerializeField] private float dashCooldown = 1.5f;
     [SerializeField] private float duckSpeedMultiplier = 0.5f;
     [SerializeField] private float duckHitboxHeightMultiplier = 0.5f;
@@ -24,6 +24,7 @@ public class PlayerMovement2D : MonoBehaviour
     private SpriteRenderer playerRenderer;
     private PlayerStats playerStats;
     private PlayerActionCounter actionCounter;
+    private PlayerSpriteAnimator spriteAnimator;
     private float horizontalInput;
     private bool jumpRequested;
     private bool dashRequested;
@@ -41,6 +42,7 @@ public class PlayerMovement2D : MonoBehaviour
 
     public int FacingDirection => facingDirection;
     public bool IsDucking => isDucking;
+    public bool IsGroundedNow => playerCollider != null && IsGrounded();
 
     private void Awake()
     {
@@ -50,6 +52,7 @@ public class PlayerMovement2D : MonoBehaviour
         playerRenderer = GetComponentInChildren<SpriteRenderer>();
         playerStats = GetComponent<PlayerStats>();
         actionCounter = GetComponent<PlayerActionCounter>();
+        spriteAnimator = GetComponent<PlayerSpriteAnimator>();
         body.gravityScale = gravityScale;
         body.freezeRotation = true;
 
@@ -232,17 +235,16 @@ public class PlayerMovement2D : MonoBehaviour
             {
                 if (HasAnimatedPlayerArt())
                 {
-                    playerRenderer.transform.localScale = new Vector3(
-                        standingRendererLocalScale.x,
-                        standingRendererLocalScale.y * duckHitboxHeightMultiplier,
-                        standingRendererLocalScale.z);
+                    playerRenderer.transform.localScale = standingRendererLocalScale;
                 }
                 else
                 {
                     playerRenderer.size = new Vector2(standingSpriteSize.x, standingSpriteSize.y * duckHitboxHeightMultiplier);
                 }
 
-                playerRenderer.transform.localPosition = standingRendererLocalPosition + Vector3.down * heightDifference * 0.5f;
+                playerRenderer.transform.localPosition = HasAnimatedPlayerArt()
+                    ? standingRendererLocalPosition
+                    : standingRendererLocalPosition + Vector3.down * heightDifference * 0.5f;
             }
         }
         else
@@ -379,25 +381,31 @@ public class PlayerMovement2D : MonoBehaviour
         isDashing = true;
         nextDashTime = Time.time + dashCooldown;
 
-        SpriteRenderer[] renderers = GetComponentsInChildren<SpriteRenderer>();
-        foreach (SpriteRenderer renderer in renderers)
-        {
-            renderer.enabled = false;
-        }
-
         body.linearVelocity = Vector2.zero;
         body.simulated = false;
 
         float distance = GetClampedDashDistance();
+        float phaseDuration = dashDisappearTime * 0.5f;
 
-        yield return new WaitForSeconds(dashDisappearTime);
+        if (spriteAnimator != null)
+        {
+            yield return spriteAnimator.PlayTeleportVanish(phaseDuration);
+        }
+        else
+        {
+            yield return new WaitForSeconds(phaseDuration);
+        }
 
         transform.position += Vector3.right * facingDirection * distance;
         body.simulated = true;
 
-        foreach (SpriteRenderer renderer in renderers)
+        if (spriteAnimator != null)
         {
-            renderer.enabled = true;
+            yield return spriteAnimator.PlayTeleportAppear(phaseDuration);
+        }
+        else
+        {
+            yield return new WaitForSeconds(phaseDuration);
         }
 
         isDashing = false;

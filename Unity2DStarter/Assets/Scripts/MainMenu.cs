@@ -21,6 +21,7 @@ public class MainMenu : MonoBehaviour
 
     private void OnGUI()
     {
+        // Background drawing
         GUI.color = Color.white;
         GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Texture2D.whiteTexture);
         GUI.color = new Color(0.06f, 0.07f, 0.1f, 1f);
@@ -33,25 +34,41 @@ public class MainMenu : MonoBehaviour
             return;
         }
 
+        // Title
         GUI.Label(MenuUI.CenteredRect(80f, 900f, 120f), "TITLE", MenuUI.MakeLabelStyle(72));
-        GUIStyle buttonStyle = MenuUI.MakeButtonStyle(32);
-        if (GUI.Button(MenuUI.CenteredRect(250f, 420f, 70f), "Play", buttonStyle))
+        
+        // Match the button text size of the Pause Menu
+        GUIStyle buttonStyle = MenuUI.MakeButtonStyle(35);
+        
+        // Save default color
+        Color originalBgColor = GUI.backgroundColor;
+
+        // --- Play Button : Rich Forest Green ---
+        GUI.backgroundColor = new Color(0.5f, 0.85f, 0.5f); 
+        if (GUI.Button(MenuUI.CenteredRect(440f, 620f, 75f), "Play", buttonStyle))
         {
             GameAudio.PlaySfx("UIpressSFX", Vector3.zero, 0.7f);
             OnPlay();
         }
 
-        if (GUI.Button(MenuUI.CenteredRect(340f, 420f, 70f), "Settings", buttonStyle))
+        // --- Settings Button : Warm Gold ---
+        GUI.backgroundColor = new Color(0.9f, 0.8f, 0.4f); 
+        if (GUI.Button(MenuUI.CenteredRect(590f, 620f, 75f), "Settings", buttonStyle))
         {
             GameAudio.PlaySfx("UIpressSFX", Vector3.zero, 0.7f);
             showingSettings = true;
         }
 
-        if (GUI.Button(MenuUI.CenteredRect(430f, 420f, 70f), "Quit", buttonStyle))
+        // --- Quit Button : Soft Brick/Berry Red ---
+        GUI.backgroundColor = new Color(0.9f, 0.5f, 0.55f); 
+        if (GUI.Button(MenuUI.CenteredRect(740f, 620f, 75f), "Quit", buttonStyle))
         {
             GameAudio.PlaySfx("UIpressSFX", Vector3.zero, 0.7f);
             OnQuit();
         }
+
+        // Restore original color
+        GUI.backgroundColor = originalBgColor;
     }
 
     private void SetupMusic()

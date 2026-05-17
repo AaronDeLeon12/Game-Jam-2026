@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using System.Collections;
 
 /// <summary>
 /// Persistent pause menu. Lives on the Systems object (created by
@@ -11,6 +12,7 @@ public class PauseMenu : MonoBehaviour
     public static bool IsPaused { get; private set; }
 
     private bool showingSettings;
+    private bool returningToMainMenu;
 
     private void Update()
     {
@@ -50,14 +52,35 @@ public class PauseMenu : MonoBehaviour
 
     private void GoToMainMenu()
     {
+        if (returningToMainMenu)
+        {
+            return;
+        }
+
+        returningToMainMenu = true;
+        StartCoroutine(GoToMainMenuRoutine());
+    }
+
+    private IEnumerator GoToMainMenuRoutine()
+    {
         IsPaused = false;
         Time.timeScale = 1f;
         AudioListener.pause = false;
 
-        // Tear down the persistent systems (player/camera/HUD + this object)
-        // so they do not bleed into the main menu / duplicate next play.
-        SystemsBootstrap.Teardown();
-        SceneManager.LoadScene("MainMenu");
+        yield return null;
+
+        GameObject systemsObject = SystemsBootstrap.PrepareForMainMenuReturn();
+
+        yield return null;
+
+        SceneManager.LoadScene("MainMenu", LoadSceneMode.Single);
+
+        yield return null;
+
+        if (systemsObject != null)
+        {
+            SystemsBootstrap.Teardown();
+        }
     }
 
     private void QuitGame()

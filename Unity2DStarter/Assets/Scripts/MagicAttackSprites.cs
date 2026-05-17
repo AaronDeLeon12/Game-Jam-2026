@@ -4,9 +4,10 @@ using UnityEngine;
 public static class MagicAttackSprites
 {
     private const string SheetPath = "Player/Attacks/attackCycles";
+    private const string ShieldSheetPath = "Player/Shield/bubble_shield_cycle";
     private static Sprite[] squareFrames;
     private static Sprite[] triangleFrames;
-    private static Sprite shieldSprite;
+    private static Sprite[] shieldFrames;
 
     public static Sprite[] SquareFrames => squareFrames ??= LoadAttackRow("Attack 3", new[]
     {
@@ -25,24 +26,9 @@ public static class MagicAttackSprites
         new Rect(690f, 735f, 270f, 95f)
     });
 
-    public static Sprite ShieldSprite
-    {
-        get
-        {
-            if (shieldSprite != null)
-            {
-                return shieldSprite;
-            }
+    public static Sprite[] ShieldFrames => shieldFrames ??= LoadBubbleShieldFrames();
 
-            Sprite[] frames = LoadAttackRow("Attack 5", new[]
-            {
-                new Rect(36f, 425f, 135f, 125f)
-            });
-
-            shieldSprite = frames.Length > 0 ? frames[0] : null;
-            return shieldSprite;
-        }
-    }
+    public static Sprite ShieldSprite => FirstOrFallback(ShieldFrames, null);
 
     public static bool HasSheet => Resources.Load<Texture2D>(SheetPath) != null;
 
@@ -73,7 +59,49 @@ public static class MagicAttackSprites
         return frames.ToArray();
     }
 
-    private static Sprite CreateTransparentFrame(Texture2D source, Rect rect, Color background, string name)
+    private static Sprite[] LoadBubbleShieldFrames()
+    {
+        Texture2D source = Resources.Load<Texture2D>(ShieldSheetPath);
+        if (source == null)
+        {
+            return new Sprite[0];
+        }
+
+        Rect[] topLeftRects =
+        {
+            new Rect(82f, 108f, 215f, 205f),
+            new Rect(370f, 105f, 320f, 290f),
+            new Rect(720f, 110f, 300f, 290f),
+            new Rect(25f, 440f, 335f, 315f),
+            new Rect(335f, 440f, 385f, 335f),
+            new Rect(695f, 440f, 325f, 335f)
+        };
+
+        List<Sprite> frames = new List<Sprite>();
+        Color background = source.GetPixel(2, source.height - 2);
+        for (int i = 0; i < topLeftRects.Length; i++)
+        {
+            Rect rect = ToBottomLeftRect(source, topLeftRects[i]);
+            Sprite sprite = CreateTransparentFrame(source, rect, background, $"Bubble Shield Frame {i + 1}", true);
+            if (sprite != null)
+            {
+                frames.Add(sprite);
+            }
+        }
+
+        return frames.ToArray();
+    }
+
+    private static Rect ToBottomLeftRect(Texture2D source, Rect topLeftRect)
+    {
+        return new Rect(
+            topLeftRect.x,
+            source.height - topLeftRect.y - topLeftRect.height,
+            topLeftRect.width,
+            topLeftRect.height);
+    }
+
+    private static Sprite CreateTransparentFrame(Texture2D source, Rect rect, Color background, string name, bool preserveSparkles = false)
     {
         int x = Mathf.Clamp(Mathf.RoundToInt(rect.x), 0, source.width - 1);
         int y = Mathf.Clamp(Mathf.RoundToInt(rect.y), 0, source.height - 1);
@@ -82,13 +110,16 @@ public static class MagicAttackSprites
 
         Texture2D frame = new Texture2D(width, height, TextureFormat.RGBA32, false);
         Color[] pixels = source.GetPixels(x, y, width, height);
+        bool[] backgroundMask = FindEdgeBackgroundMask(pixels, width, height, background);
         for (int i = 0; i < pixels.Length; i++)
         {
-            Color color = pixels[i];
-            float distance = Mathf.Abs(color.r - background.r) + Mathf.Abs(color.g - background.g) + Mathf.Abs(color.b - background.b);
-            if (distance < 0.22f || color.a < 0.08f)
+            if (backgroundMask[i] || pixels[i].a < 0.08f)
             {
                 pixels[i] = Color.clear;
+            }
+            else if (preserveSparkles && pixels[i].a < 0.75f)
+            {
+                pixels[i].a = Mathf.Max(pixels[i].a, 0.75f);
             }
         }
 
@@ -100,5 +131,61 @@ public static class MagicAttackSprites
         Sprite sprite = Sprite.Create(frame, new Rect(0f, 0f, width, height), new Vector2(0.5f, 0.5f), Mathf.Max(height, 1));
         sprite.name = name;
         return sprite;
+    }
+
+    private static bool[] FindEdgeBackgroundMask(Color[] pixels, int width, int height, Color background)
+    {
+        bool[] visited = new bool[pixels.Length];
+        Queue<int> queue = new Queue<int>();
+
+        void TryEnqueue(int x, int y)
+        {
+            if (x < 0 || x >= width || y < 0 || y >= height)
+            {
+                return;
+            }
+
+            int index = y * width + x;
+            if (visited[index] || !IsBackground(pixels[index], background))
+            {
+                return;
+            }
+
+            visited[index] = true;
+            queue.Enqueue(index);
+        }
+
+        for (int x = 0; x < width; x++)
+        {
+            TryEnqueue(x, 0);
+            TryEnqueue(x, height - 1);
+        }
+
+        for (int y = 0; y < height; y++)
+        {
+            TryEnqueue(0, y);
+            TryEnqueue(width - 1, y);
+        }
+
+        while (queue.Count > 0)
+        {
+            int index = queue.Dequeue();
+            int x = index % width;
+            int y = index / width;
+
+            TryEnqueue(x + 1, y);
+            TryEnqueue(x - 1, y);
+            TryEnqueue(x, y + 1);
+            TryEnqueue(x, y - 1);
+        }
+
+        return visited;
+    }
+
+    private static bool IsBackground(Color color, Color background)
+    {
+        float distance = Mathf.Abs(color.r - background.r) + Mathf.Abs(color.g - background.g) + Mathf.Abs(color.b - background.b);
+        bool nearlyPeach = color.r > 0.78f && color.g > 0.58f && color.b > 0.42f;
+        return distance < 0.2f || nearlyPeach;
     }
 }

@@ -49,16 +49,10 @@ public class DoorInteractable : MonoBehaviour, IInteractable
         GUI.DrawTexture(rect, Texture2D.whiteTexture);
         GUI.color = Color.white;
 
-        GUIStyle labelStyle = new GUIStyle(GUI.skin.label)
-        {
-            fontSize = 22,
-            alignment = TextAnchor.MiddleCenter,
-            wordWrap = true,
-            normal = { textColor = Color.white }
-        };
+        GUIStyle labelStyle = DialogueUI.MakeLabelStyle(22, Color.white, TextAnchor.MiddleCenter);
         GUI.Label(new Rect(rect.x + 24f, rect.y + 26f, rect.width - 48f, 74f), confirmQuestion, labelStyle);
 
-        GUIStyle buttonStyle = new GUIStyle(GUI.skin.button) { fontSize = 20 };
+        GUIStyle buttonStyle = DialogueUI.MakeButtonStyle(20);
         float bw = 170f;
         float bh = 52f;
         float by = rect.y + rect.height - bh - 24f;

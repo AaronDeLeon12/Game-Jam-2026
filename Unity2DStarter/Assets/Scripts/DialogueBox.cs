@@ -57,21 +57,17 @@ public class DialogueBox : MonoBehaviour
         GUI.DrawTexture(panelRect, Texture2D.whiteTexture);
         GUI.color = Color.white;
 
-        GUIStyle textStyle = new GUIStyle(GUI.skin.label);
-        textStyle.fontSize = Mathf.RoundToInt(Screen.height * 0.03f);
-        textStyle.font = MenuUI.GameFont;
-        textStyle.normal.textColor = Color.white;
-        textStyle.wordWrap = true;
+        GUIStyle textStyle = DialogueUI.MakeLabelStyle(Mathf.RoundToInt(Screen.height * 0.03f), Color.white);
         textStyle.padding = new RectOffset(30, 30, 20, 20);
 
         Rect textRect = new Rect(panelRect.x, panelRect.y, panelRect.width, panelRect.height - 30f);
         GUI.Label(textRect, lines[currentLine], textStyle);
 
-        GUIStyle hintStyle = new GUIStyle(GUI.skin.label);
-        hintStyle.fontSize = Mathf.RoundToInt(Screen.height * 0.02f);
-        hintStyle.font = MenuUI.GameFont;
+        GUIStyle hintStyle = DialogueUI.MakeLabelStyle(
+            Mathf.RoundToInt(Screen.height * 0.02f),
+            new Color(0.6f, 0.6f, 0.6f, 1f),
+            TextAnchor.LowerRight);
         hintStyle.normal.textColor = new Color(0.6f, 0.6f, 0.6f, 1f);
-        hintStyle.alignment = TextAnchor.LowerRight;
         hintStyle.padding = new RectOffset(10, 16, 0, 10);
 
         GUI.Label(panelRect, "O  next / close", hintStyle);

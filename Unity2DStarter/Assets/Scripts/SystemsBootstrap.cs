@@ -42,6 +42,29 @@ public class SystemsBootstrap : MonoBehaviour
             return;
         }
 
+        PrepareForMainMenuReturn();
+
+        if (Instance != null)
+        {
+            GameObject systemsObject = Instance.gameObject;
+            Instance = null;
+            Destroy(systemsObject);
+        }
+    }
+
+    public static GameObject PrepareForMainMenuReturn()
+    {
+        if (Instance == null)
+        {
+            return null;
+        }
+
+        LevelManager levelManager = Instance.GetComponent<LevelManager>();
+        if (levelManager != null)
+        {
+            levelManager.PrepareForTeardown();
+        }
+
         if (Instance.Player != null)
         {
             Destroy(Instance.Player);
@@ -57,9 +80,7 @@ public class SystemsBootstrap : MonoBehaviour
             Destroy(Instance.Hud);
         }
 
-        GameObject systemsObject = Instance.gameObject;
-        Instance = null;
-        Destroy(systemsObject);
+        return Instance.gameObject;
     }
 
     private void Awake()
