@@ -6,11 +6,13 @@ public class GameSession : MonoBehaviour
 {
     public static GameSession Instance { get; private set; }
     public static GameDifficulty CurrentDifficulty => Instance != null ? Instance.difficulty : GameDifficulty.Normal;
+    public static bool IsApplyingLoad => Instance != null && Instance.applyingLoad;
 
     [SerializeField] private GameDifficulty difficulty = GameDifficulty.Normal;
 
     private SaveData pendingLoad;
     private bool applyingLoad;
+    private readonly System.Collections.Generic.HashSet<string> defeatedEnemyIds = new System.Collections.Generic.HashSet<string>();
 
     public GameDifficulty Difficulty => difficulty;
 
@@ -29,6 +31,7 @@ public class GameSession : MonoBehaviour
     {
         EnsureExists();
         Instance.difficulty = newDifficulty;
+        Instance.defeatedEnemyIds.Clear();
         SessionStats.ResetRun();
     }
 
@@ -42,9 +45,19 @@ public class GameSession : MonoBehaviour
         EnsureExists();
         Instance.pendingLoad = save;
         Instance.difficulty = save.difficulty;
+        Instance.defeatedEnemyIds.Clear();
+        if (save.defeatedEnemyIds != null)
+        {
+            for (int i = 0; i < save.defeatedEnemyIds.Count; i++)
+            {
+                if (!string.IsNullOrEmpty(save.defeatedEnemyIds[i]))
+                {
+                    Instance.defeatedEnemyIds.Add(save.defeatedEnemyIds[i]);
+                }
+            }
+        }
         SessionStats.LoadFromSave(save);
 
-        SystemsBootstrap.EnsureExists();
         string sceneName = string.IsNullOrEmpty(save.sceneName) ? "home_day_1" : save.sceneName;
         SceneManager.LoadScene(sceneName);
     }
@@ -130,5 +143,29 @@ public class GameSession : MonoBehaviour
         {
             follow.Snap();
         }
+
+        EnemySaveTracker.PruneDefeatedEnemies();
+    }
+
+    public static void RecordDefeatedEnemy(string enemyId)
+    {
+        EnsureExists();
+        if (!string.IsNullOrEmpty(enemyId))
+        {
+            Instance.defeatedEnemyIds.Add(enemyId);
+        }
+    }
+
+    public static bool IsEnemyDefeated(string enemyId)
+    {
+        return Instance != null
+            && !string.IsNullOrEmpty(enemyId)
+            && Instance.defeatedEnemyIds.Contains(enemyId);
+    }
+
+    public static System.Collections.Generic.List<string> GetDefeatedEnemyIds()
+    {
+        EnsureExists();
+        return new System.Collections.Generic.List<string>(Instance.defeatedEnemyIds);
     }
 }

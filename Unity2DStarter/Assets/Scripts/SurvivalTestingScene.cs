@@ -7,17 +7,20 @@ public class SurvivalTestingScene : MonoBehaviour
     [SerializeField] private float chunkWidth = 28f;
     [SerializeField] private float chunkHeight = 16f;
     [SerializeField] private int generationRadius = 1;
+    [SerializeField] private int maxChunksGeneratedPerFrame = 1;
     [SerializeField] private float enemyActivationRange = 18f;
 
     private readonly HashSet<Vector2Int> generatedChunks = new HashSet<Vector2Int>();
+    private readonly HashSet<Vector2Int> queuedChunks = new HashSet<Vector2Int>();
+    private readonly Queue<Vector2Int> pendingChunks = new Queue<Vector2Int>();
     private Transform player;
     private Transform chunkRoot;
+    private Sprite bossFloorSprite;
 
     private enum EnemyKind
     {
-        BasicChaser,
+        Mantis,
         Flying,
-        SmallContact,
         KitingShooter
     }
 
@@ -31,6 +34,7 @@ public class SurvivalTestingScene : MonoBehaviour
         GameAudio.PlayMusic("MainMenu", 0.35f);
 
         chunkRoot = new GameObject("Survival Generated Chunks").transform;
+        bossFloorSprite = Resources.Load<Sprite>("Terrain/bossFightFloor");
 
         if (SystemsBootstrap.Instance != null && SystemsBootstrap.Instance.Player != null)
         {
@@ -42,7 +46,9 @@ public class SurvivalTestingScene : MonoBehaviour
     private void Start()
     {
         FindPlayer();
+        GenerateChunk(Vector2Int.zero);
         GenerateAroundPlayer();
+        ProcessPendingChunks();
     }
 
     private void Update()
@@ -54,6 +60,7 @@ public class SurvivalTestingScene : MonoBehaviour
 
         FindPlayer();
         GenerateAroundPlayer();
+        ProcessPendingChunks();
     }
 
     private void GenerateAroundPlayer()
@@ -69,17 +76,38 @@ public class SurvivalTestingScene : MonoBehaviour
             for (int x = center.x - generationRadius; x <= center.x + generationRadius; x++)
             {
                 Vector2Int coord = new Vector2Int(x, y);
-                if (!generatedChunks.Contains(coord))
+                if (!generatedChunks.Contains(coord) && !queuedChunks.Contains(coord))
                 {
-                    generatedChunks.Add(coord);
-                    GenerateChunk(coord);
+                    queuedChunks.Add(coord);
+                    pendingChunks.Enqueue(coord);
                 }
+            }
+        }
+    }
+
+    private void ProcessPendingChunks()
+    {
+        int budget = Mathf.Max(1, maxChunksGeneratedPerFrame);
+        while (budget > 0 && pendingChunks.Count > 0)
+        {
+            Vector2Int coord = pendingChunks.Dequeue();
+            queuedChunks.Remove(coord);
+            if (!generatedChunks.Contains(coord))
+            {
+                GenerateChunk(coord);
+                budget--;
             }
         }
     }
 
     private void GenerateChunk(Vector2Int coord)
     {
+        if (generatedChunks.Contains(coord))
+        {
+            return;
+        }
+
+        generatedChunks.Add(coord);
         Transform chunk = new GameObject("Survival Chunk " + coord.x + "," + coord.y).transform;
         chunk.SetParent(chunkRoot, false);
 
@@ -100,13 +128,7 @@ public class SurvivalTestingScene : MonoBehaviour
     {
         if (coord.y == 0)
         {
-            TerrainBlock floor = TerrainBlock.Spawn(
-                TerrainType.Floor,
-                new Vector2(origin.x + chunkWidth * 0.5f, -3f),
-                new Vector2(chunkWidth + 1f, 1f),
-                parent,
-                "Survival Ground");
-            TintTerrain(floor, new Color(0.24f, 0.25f, 0.29f));
+            SpawnBossFloor(parent, new Vector2(origin.x + chunkWidth * 0.5f, -2.7f), chunkWidth + 1f);
         }
 
         int platformPattern = Mathf.Abs(coord.x * 17 + coord.y * 31) % 5;
@@ -151,7 +173,7 @@ public class SurvivalTestingScene : MonoBehaviour
         {
             float x = origin.x + Random.Range(4f, chunkWidth - 4f);
             float y = origin.y + Random.Range(-1.95f, 3.5f);
-            EnemyKind kind = (EnemyKind)Random.Range(0, 4);
+            EnemyKind kind = (EnemyKind)Random.Range(0, 3);
             Vector3 position = new Vector3(x, y, 0f);
 
             if (kind == EnemyKind.Flying)
@@ -170,33 +192,22 @@ public class SurvivalTestingScene : MonoBehaviour
         enemy.transform.position = position;
 
         bool flying = kind == EnemyKind.Flying;
-        float health = 100f;
         Vector3 scale = Vector3.one;
-        Color color = new Color(0.9f, 0.25f, 0.25f);
 
         switch (kind)
         {
             case EnemyKind.Flying:
-                health = 50f;
-                color = new Color(0.8f, 0.25f, 1f);
-                break;
-            case EnemyKind.SmallContact:
-                health = 80f;
-                scale = new Vector3(0.65f, 0.65f, 1f);
-                color = new Color(1f, 0.25f, 0.25f);
+                position.y += 0.6f;
                 break;
             case EnemyKind.KitingShooter:
-                health = 100f;
-                color = new Color(0.1f, 0.75f, 0.25f);
+                scale = new Vector3(0.9f, 0.9f, 1f);
                 break;
             default:
-                health = 100f;
-                color = new Color(0.85f, 0.25f, 0.2f);
+                scale = new Vector3(1.1f, 1.1f, 1f);
                 break;
         }
 
         enemy.transform.localScale = scale;
-        PlaceholderSprites.MakeSquare(enemy, color, 10);
 
         BoxCollider2D collider = enemy.AddComponent<BoxCollider2D>();
         collider.isTrigger = flying;
@@ -213,19 +224,15 @@ public class SurvivalTestingScene : MonoBehaviour
         switch (kind)
         {
             case EnemyKind.Flying:
-                enemy.AddComponent<EnemyHealth2D>().Configure(health);
+                enemy.AddComponent<EnemyHealth2D>().Configure(50f);
                 enemy.AddComponent<FlyingEnemyAI>();
                 break;
-            case EnemyKind.SmallContact:
-                enemy.AddComponent<EnemyHealth2D>().Configure(health);
-                enemy.AddComponent<SmallContactEnemyAI>();
-                break;
             case EnemyKind.KitingShooter:
-                enemy.AddComponent<EnemyHealth2D>().Configure(health);
+                enemy.AddComponent<EnemyHealth2D>().Configure(100f);
                 enemy.AddComponent<KitingShooterEnemyAI>();
                 break;
             default:
-                enemy.AddComponent<Enemy>();
+                enemy.AddComponent<MantisEnemy>();
                 break;
         }
 
@@ -237,6 +244,30 @@ public class SurvivalTestingScene : MonoBehaviour
     {
         TerrainBlock platform = TerrainBlock.Spawn(TerrainType.Platform, position, size, parent, "Survival One-Way Platform");
         TintTerrain(platform, new Color(0.43f, 0.47f, 0.55f));
+    }
+
+    private void SpawnBossFloor(Transform parent, Vector2 position, float width)
+    {
+        GameObject floor = new GameObject("Wrath Boss Floor");
+        floor.transform.SetParent(parent, false);
+        floor.transform.position = position;
+        floor.transform.localScale = new Vector3(width, 4f, 1f);
+
+        SpriteRenderer renderer = floor.AddComponent<SpriteRenderer>();
+        renderer.sprite = bossFloorSprite != null ? bossFloorSprite : PlaceholderSprites.Square;
+        renderer.drawMode = SpriteDrawMode.Sliced;
+        renderer.size = Vector2.one;
+        renderer.sortingOrder = 0;
+        renderer.color = Color.white;
+        SpriteLit.Apply(renderer);
+
+        BoxCollider2D collider = floor.AddComponent<BoxCollider2D>();
+        collider.isTrigger = false;
+        collider.size = Vector2.one;
+        collider.offset = Vector2.zero;
+
+        floor.AddComponent<GroundSurface2D>();
+        floor.AddComponent<LoweredFloorHitbox>();
     }
 
     private static void TintTerrain(TerrainBlock terrain, Color color)
@@ -286,7 +317,7 @@ public class SurvivalTestingScene : MonoBehaviour
         Camera cam = SystemsBootstrap.Instance.GameCamera;
         cam.orthographic = true;
         cam.orthographicSize = 6f;
-        cam.backgroundColor = new Color(0.06f, 0.07f, 0.1f);
+        cam.backgroundColor = Color.black;
 
         CameraFollow2D follow = cam.GetComponent<CameraFollow2D>();
         if (follow != null)
@@ -297,6 +328,6 @@ public class SurvivalTestingScene : MonoBehaviour
 
     private static void BuildFlatLight()
     {
-        SceneLighting.ReplaceGlobalLight("Survival Flat Light", Color.white, 0.85f);
+        SceneLighting.ReplaceGlobalLight("Survival Flat Light", Color.white, 1f);
     }
 }

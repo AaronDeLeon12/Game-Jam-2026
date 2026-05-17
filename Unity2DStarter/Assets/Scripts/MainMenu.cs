@@ -313,6 +313,9 @@ public class MainMenu : MonoBehaviour
         Camera existing = Camera.main;
         if (existing != null && existing.isActiveAndEnabled && existing.gameObject.scene.name != "DontDestroyOnLoad")
         {
+            existing.clearFlags = CameraClearFlags.SolidColor;
+            existing.backgroundColor = new Color(0.07f, 0.08f, 0.11f);
+            existing.orthographic = true;
             return;
         }
 
@@ -322,6 +325,9 @@ public class MainMenu : MonoBehaviour
             if (cameras[i] != null && cameras[i].gameObject.scene.name != "DontDestroyOnLoad" && cameras[i].isActiveAndEnabled)
             {
                 cameras[i].tag = "MainCamera";
+                cameras[i].clearFlags = CameraClearFlags.SolidColor;
+                cameras[i].backgroundColor = new Color(0.07f, 0.08f, 0.11f);
+                cameras[i].orthographic = true;
                 return;
             }
         }
@@ -337,6 +343,8 @@ public class MainMenu : MonoBehaviour
         Camera cam = camObj.AddComponent<Camera>();
         cam.backgroundColor = new Color(0.07f, 0.08f, 0.11f);
         cam.orthographic = true;
+        cam.clearFlags = CameraClearFlags.SolidColor;
+        cam.depth = -100f;
         camObj.AddComponent<AudioListener>();
     }
 

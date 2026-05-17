@@ -4,6 +4,7 @@ using UnityEngine;
 public class ResourceSheetAnimator2D : MonoBehaviour
 {
     [SerializeField] private string resourcePath;
+    [SerializeField] private string[] frameNames;
     [SerializeField] private int columns = 4;
     [SerializeField] private int rows = 3;
     [SerializeField] private float framesPerSecond = 8f;
@@ -28,6 +29,7 @@ public class ResourceSheetAnimator2D : MonoBehaviour
     public void Configure(string newResourcePath, int newColumns, int newRows, float fps, bool shouldLoop, bool shouldPingPong, int ignoredLastFrames = 0, float ppu = 256f, int padding = 6, Vector2? normalizedPivot = null)
     {
         resourcePath = newResourcePath;
+        frameNames = null;
         columns = newColumns;
         rows = newRows;
         framesPerSecond = fps;
@@ -38,6 +40,18 @@ public class ResourceSheetAnimator2D : MonoBehaviour
         cropPadding = padding;
         spritePivot = normalizedPivot ?? new Vector2(0.5f, 0.5f);
         LoadFrames();
+    }
+
+    public void ConfigureFrameFiles(string folderPath, string[] newFrameNames, float fps, bool shouldLoop, bool shouldPingPong, float ppu = 256f, int padding = 6, int bottomPadding = 8)
+    {
+        resourcePath = folderPath;
+        frameNames = newFrameNames;
+        framesPerSecond = fps;
+        loop = shouldLoop;
+        pingPong = shouldPingPong;
+        pixelsPerUnit = ppu;
+        cropPadding = padding;
+        LoadFrameFiles(bottomPadding);
     }
 
     private void Awake()
@@ -57,8 +71,34 @@ public class ResourceSheetAnimator2D : MonoBehaviour
         {
             spriteRenderer = GetComponent<SpriteRenderer>();
         }
-        frames = RuntimeSpriteCropper.LoadNormalizedGridFrames(resourcePath, columns, rows, pixelsPerUnit, cropPadding, ignoreLastFrames, 8);
+        if (frameNames != null && frameNames.Length > 0)
+        {
+            LoadFrameFiles(8);
+            return;
+        }
 
+        frames = RuntimeSpriteCropper.LoadNormalizedGridFrames(resourcePath, columns, rows, pixelsPerUnit, cropPadding, ignoreLastFrames, 8);
+        ResetAnimation();
+    }
+
+    private void LoadFrameFiles(int bottomPadding)
+    {
+        if (string.IsNullOrEmpty(resourcePath) || frameNames == null || frameNames.Length == 0)
+        {
+            return;
+        }
+
+        if (spriteRenderer == null)
+        {
+            spriteRenderer = GetComponent<SpriteRenderer>();
+        }
+
+        frames = RuntimeSpriteCropper.LoadNormalizedFrameFiles(resourcePath, frameNames, pixelsPerUnit, cropPadding, bottomPadding);
+        ResetAnimation();
+    }
+
+    private void ResetAnimation()
+    {
         frameIndex = 0;
         frameDirection = 1;
         timer = 0f;

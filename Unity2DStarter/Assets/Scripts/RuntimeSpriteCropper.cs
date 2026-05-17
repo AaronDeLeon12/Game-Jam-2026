@@ -3,6 +3,9 @@ using UnityEngine;
 
 public static class RuntimeSpriteCropper
 {
+    private static readonly Dictionary<string, Sprite[]> NormalizedGridCache = new Dictionary<string, Sprite[]>();
+    private static readonly Dictionary<string, Sprite[]> NormalizedFrameFileCache = new Dictionary<string, Sprite[]>();
+
     public static Sprite LoadTrimmedSprite(string resourcePath, float pixelsPerUnit = 256f, int padding = 8)
     {
         Texture2D texture = Resources.Load<Texture2D>(resourcePath);
@@ -86,6 +89,12 @@ public static class RuntimeSpriteCropper
 
     public static Sprite[] LoadNormalizedGridFrames(string resourcePath, int columns, int rows, float pixelsPerUnit = 256f, int padding = 6, int ignoreLastFrames = 0, int bottomPadding = 8)
     {
+        string cacheKey = resourcePath + "|" + columns + "|" + rows + "|" + pixelsPerUnit + "|" + padding + "|" + ignoreLastFrames + "|" + bottomPadding;
+        if (NormalizedGridCache.TryGetValue(cacheKey, out Sprite[] cachedFrames))
+        {
+            return cachedFrames;
+        }
+
         Texture2D sheet = Resources.Load<Texture2D>(resourcePath);
         if (sheet == null || columns <= 0 || rows <= 0)
         {
@@ -118,7 +127,9 @@ public static class RuntimeSpriteCropper
             frames.Add(CreateBottomCenteredSprite(transparent, crop, frameWidth, frameHeight, pixelsPerUnit, bottomPadding));
         }
 
-        return frames.ToArray();
+        Sprite[] result = frames.ToArray();
+        NormalizedGridCache[cacheKey] = result;
+        return result;
     }
 
     public static Sprite[] LoadNormalizedFrameFiles(string folderPath, string[] frameNames, float pixelsPerUnit = 256f, int padding = 6, int bottomPadding = 8)
@@ -126,6 +137,12 @@ public static class RuntimeSpriteCropper
         if (frameNames == null || frameNames.Length == 0)
         {
             return new Sprite[0];
+        }
+
+        string cacheKey = folderPath + "|" + string.Join(",", frameNames) + "|" + pixelsPerUnit + "|" + padding + "|" + bottomPadding;
+        if (NormalizedFrameFileCache.TryGetValue(cacheKey, out Sprite[] cachedFrames))
+        {
+            return cachedFrames;
         }
 
         List<Texture2D> textures = new List<Texture2D>();
@@ -163,7 +180,9 @@ public static class RuntimeSpriteCropper
             frames.Add(CreateBottomCenteredSprite(transparent, crop, canvasWidth, canvasHeight, pixelsPerUnit, bottomPadding));
         }
 
-        return frames.ToArray();
+        Sprite[] result = frames.ToArray();
+        NormalizedFrameFileCache[cacheKey] = result;
+        return result;
     }
 
     private static Sprite CreateBottomCenteredSprite(Texture2D source, Rect crop, int canvasWidth, int canvasHeight, float pixelsPerUnit, int bottomPadding)

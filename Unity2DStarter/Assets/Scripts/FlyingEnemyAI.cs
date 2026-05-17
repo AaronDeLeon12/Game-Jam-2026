@@ -66,7 +66,15 @@ public class FlyingEnemyAI : MonoBehaviour
             animator = gameObject.AddComponent<ResourceSheetAnimator2D>();
         }
 
-        animator.Configure("Enemies/fairyUpdatedSprites", 4, 3, 8f, true, 1, 256f, 10);
+        animator.ConfigureFrameFiles(
+            "Enemies",
+            new[] { "fairy1", "fairy2", "fairy3", "fairy4", "fairy5", "fairy6" },
+            8f,
+            true,
+            false,
+            256f,
+            10,
+            8);
 
         Transform glow = transform.Find("Charge Glow");
         if (glow == null)
@@ -173,7 +181,24 @@ public class FlyingEnemyAI : MonoBehaviour
 
     private void LateUpdate()
     {
+        UpdateFacing();
         UpdateChargeGlow();
+    }
+
+    private void UpdateFacing()
+    {
+        if (spriteRenderer == null)
+        {
+            return;
+        }
+
+        float direction = body != null && Mathf.Abs(body.linearVelocity.x) > 0.05f
+            ? body.linearVelocity.x
+            : dashDirection.x;
+        if (Mathf.Abs(direction) > 0.05f)
+        {
+            spriteRenderer.flipX = direction < 0f;
+        }
     }
 
     private void UpdateChargeGlow()

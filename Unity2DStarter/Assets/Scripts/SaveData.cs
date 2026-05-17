@@ -15,6 +15,7 @@ public class SaveData
     public float health;
     public float mana;
     public List<ActionCountSave> actionCounts = new List<ActionCountSave>();
+    public List<string> defeatedEnemyIds = new List<string>();
 }
 
 [Serializable]

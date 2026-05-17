@@ -89,7 +89,8 @@ public static class SaveSystem
             playerZ = position.z,
             health = stats != null ? stats.Health : 100f,
             mana = stats != null ? stats.Mana : 100f,
-            actionCounts = SessionStats.ToSaveList()
+            actionCounts = SessionStats.ToSaveList(),
+            defeatedEnemyIds = GameSession.GetDefeatedEnemyIds()
         };
 
         if (actionCounter != null)

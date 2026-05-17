@@ -67,12 +67,26 @@ public class MantisEnemy : MonoBehaviour, IDamageable
     {
         health = Mathf.Max(0f, health - Mathf.Max(0f, amount));
         if (animator != null) animator.FlashDamage();
-        if (health <= 0f) Destroy(gameObject);
+        if (health <= 0f)
+        {
+            EnemySaveTracker tracker = GetComponent<EnemySaveTracker>();
+            if (tracker != null)
+            {
+                tracker.RecordDefeat();
+            }
+
+            Destroy(gameObject);
+        }
     }
 
     // ── Unity lifecycle ───────────────────────────────────────────────────
     private void Awake()
     {
+        if (GetComponent<EnemySaveTracker>() == null)
+        {
+            gameObject.AddComponent<EnemySaveTracker>();
+        }
+
         body          = GetComponent<Rigidbody2D>();
         bodyCollider  = GetComponent<Collider2D>();
         animator      = GetComponent<MantisAnimator>();

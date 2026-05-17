@@ -299,22 +299,12 @@ public class GameHud : MonoBehaviour
 
         returningToMainMenu = true;
         GameModal.Close();
-        PauseMenu pauseMenu = FindAnyObjectByType<PauseMenu>();
-        if (pauseMenu != null)
-        {
-            Destroy(pauseMenu);
-        }
-
         Time.timeScale = 1f;
         AudioListener.pause = false;
-        GameObject systemsObject = SystemsBootstrap.PrepareForMainMenuReturn();
-        yield return null;
+
         SceneManager.LoadScene("MainMenu", LoadSceneMode.Single);
         yield return null;
-        if (systemsObject != null)
-        {
-            SystemsBootstrap.Teardown();
-        }
+        SystemsBootstrap.Teardown();
     }
 
     private static void QuitGame()

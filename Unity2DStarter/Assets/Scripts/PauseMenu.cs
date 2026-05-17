@@ -190,36 +190,65 @@ public class PauseMenu : MonoBehaviour
         // Force GUI enabled here to guarantee functionality
         GUI.enabled = true;
 
-        Rect rect = new Rect((Screen.width - 800f) * 0.5f, (Screen.height - 400f) * 0.5f, 800f, 400f);
+        // 1. Create a copy of your label style so we can safely enable word wrap
+        // without affecting other parts of your UI.
+        GUIStyle warningStyle = new GUIStyle(MenuUI.MakeLabelStyle(35));
+        warningStyle.wordWrap = true;
+        warningStyle.alignment = TextAnchor.MiddleCenter;
+
+        // 2. Calculate dynamic height based on the text length
+        float overlayWidth = 800f;
+        float textWidth = overlayWidth - 80f; // 40px padding on left and right
+
+        // CalcHeight tells us exactly how tall the Rect needs to be to fit the text
+        float calculatedTextHeight = warningStyle.CalcHeight(new GUIContent(confirmMessage), textWidth);
+
+        // 3. Determine the final overlay height (minimum 400f, expands if text is very long)
+        // Formula: Top Padding (40) + Text Height + Middle Padding (40) + Button Height (75) + Bottom Padding (40)
+        float minimumRequiredHeight = calculatedTextHeight + 195f;
+        float overlayHeight = Mathf.Max(400f, minimumRequiredHeight);
+
+        // Center the dynamically sized overlay
+        Rect rect = new Rect((Screen.width - overlayWidth) * 0.5f, (Screen.height - overlayHeight) * 0.5f, overlayWidth, overlayHeight);
         
+        // Draw backgrounds
         GUI.color = new Color(0f, 0f, 0f, 0.72f);
         GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Texture2D.whiteTexture);
         GUI.color = new Color(0.05f, 0.05f, 0.1f, 0.96f);
         GUI.DrawTexture(rect, Texture2D.whiteTexture);
         GUI.color = Color.white;
 
-        GUI.Label(new Rect(rect.x + 40f, rect.y + 40f, rect.width - 80f, 200f), confirmMessage, MenuUI.MakeLabelStyle(40));
+        // Draw the dynamically sized text
+        GUI.Label(new Rect(rect.x + 40f, rect.y + 40f, textWidth, calculatedTextHeight), confirmMessage, warningStyle);
 
         GUIStyle buttonStyle = MenuUI.MakeButtonStyle(35);
         Color originalBgColor = GUI.backgroundColor;
 
+        // 4. Calculate button Y position
+        // If the overlay is exactly 400 tall, keep your original button layout.
+        // If it expanded, anchor the buttons dynamically below the text.
+        float buttonY = (overlayHeight == 400f)
+            ? rect.y + 260f
+            : rect.y + 40f + calculatedTextHeight + 40f;
+
+        // --- Yes Button ---
         GUI.backgroundColor = new Color(0.5f, 0.85f, 0.5f);
-        if (GUI.Button(new Rect(rect.center.x - 240f, rect.y + 260f, 220f, 75f), "Yes", buttonStyle))
+        if (GUI.Button(new Rect(rect.center.x - 240f, buttonY, 220f, 75f), "Yes", buttonStyle))
         {
             System.Action action = confirmAction;
             ClearConfirm();
             action?.Invoke();
         }
 
+        // --- No Button ---
         GUI.backgroundColor = new Color(0.9f, 0.5f, 0.55f);
-        if (GUI.Button(new Rect(rect.center.x + 20f, rect.y + 260f, 220f, 75f), "No", buttonStyle))
+        if (GUI.Button(new Rect(rect.center.x + 20f, buttonY, 220f, 75f), "No", buttonStyle))
         {
             ClearConfirm();
         }
 
         GUI.backgroundColor = originalBgColor;
     }
-
     private void OnDestroy()
     {
         if (IsPaused)

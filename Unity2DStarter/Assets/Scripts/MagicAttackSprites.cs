@@ -11,10 +11,10 @@ public static class MagicAttackSprites
 
     public static Sprite[] SquareFrames => squareFrames ??= LoadAttackRow("Attack 3", new[]
     {
-        new Rect(38f, 652f, 135f, 68f),
-        new Rect(184f, 646f, 145f, 76f),
-        new Rect(352f, 646f, 150f, 76f),
-        new Rect(515f, 648f, 330f, 76f)
+        new Rect(35f, 592f, 150f, 120f),
+        new Rect(178f, 586f, 170f, 128f),
+        new Rect(346f, 586f, 180f, 128f),
+        new Rect(508f, 588f, 355f, 126f)
     });
 
     public static Sprite[] TriangleFrames => triangleFrames ??= LoadAttackRow("Attack 2", new[]

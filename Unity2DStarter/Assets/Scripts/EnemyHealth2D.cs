@@ -10,6 +10,11 @@ public class EnemyHealth2D : MonoBehaviour, IDamageable
 
     private void Awake()
     {
+        if (GetComponent<EnemySaveTracker>() == null)
+        {
+            gameObject.AddComponent<EnemySaveTracker>();
+        }
+
         health = maxHealth;
     }
 
@@ -33,6 +38,12 @@ public class EnemyHealth2D : MonoBehaviour, IDamageable
         if (health <= 0f)
         {
             SessionStats.Record("enemies_killed");
+            EnemySaveTracker tracker = GetComponent<EnemySaveTracker>();
+            if (tracker != null)
+            {
+                tracker.RecordDefeat();
+            }
+
             Destroy(gameObject);
         }
     }

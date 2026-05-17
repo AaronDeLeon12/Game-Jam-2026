@@ -13,6 +13,7 @@ public class KitingShooterEnemyAI : MonoBehaviour
     [SerializeField] private float recoveryDuration = 0.35f;
 
     private Rigidbody2D body;
+    private SpriteRenderer spriteRenderer;
     private Transform player;
     private float nextFireTime;
     private float recoveryEndTime;
@@ -28,20 +29,29 @@ public class KitingShooterEnemyAI : MonoBehaviour
 
     private void SetupVisual()
     {
-        SpriteRenderer renderer = GetComponent<SpriteRenderer>();
-        if (renderer == null)
+        spriteRenderer = GetComponent<SpriteRenderer>();
+        if (spriteRenderer == null)
         {
-            renderer = gameObject.AddComponent<SpriteRenderer>();
+            spriteRenderer = gameObject.AddComponent<SpriteRenderer>();
         }
 
-        renderer.sortingOrder = 12;
+        spriteRenderer.sortingOrder = 12;
+        spriteRenderer.color = Color.white;
         ResourceSheetAnimator2D animator = GetComponent<ResourceSheetAnimator2D>();
         if (animator == null)
         {
             animator = gameObject.AddComponent<ResourceSheetAnimator2D>();
         }
 
-        animator.Configure("Enemies/unicornAttackCycleUpdate", 4, 3, 8f, true, true, 0, 256f, 10);
+        animator.ConfigureFrameFiles(
+            "Enemies",
+            new[] { "unicorn1", "unicorn2", "unicorn3", "unicorn4", "unicorn5", "unicorn6" },
+            8f,
+            true,
+            true,
+            256f,
+            18,
+            14);
     }
 
     private void Update()
@@ -65,6 +75,7 @@ public class KitingShooterEnemyAI : MonoBehaviour
         }
 
         KeepDistance();
+        UpdateFacing();
 
         if (Time.time >= nextFireTime)
         {
@@ -99,12 +110,20 @@ public class KitingShooterEnemyAI : MonoBehaviour
         Vector2 direction = ((Vector2)player.position - (Vector2)transform.position).normalized;
         GameObject projectile = new GameObject("Kiting Enemy Projectile");
         projectile.transform.position = transform.position + (Vector3)(direction * 0.75f);
-        projectile.transform.localScale = new Vector3(0.35f, 0.35f, 1f);
+        projectile.transform.localScale = new Vector3(0.24f, 0.24f, 1f);
 
         SpriteRenderer renderer = projectile.AddComponent<SpriteRenderer>();
-        renderer.sprite = PlaceholderSprites.Square;
-        renderer.color = new Color(0.35f, 1f, 0.25f);
+        Sprite[] frames = MagicAttackSprites.SquareFrames;
+        renderer.sprite = MagicAttackSprites.FirstOrFallback(frames, PlaceholderSprites.Square);
+        renderer.color = frames.Length > 0 ? Color.white : new Color(0.25f, 0.65f, 1f);
+        renderer.flipX = direction.x > 0f;
         renderer.sortingOrder = 20;
+        SpriteLit.Apply(renderer);
+
+        if (frames.Length > 1)
+        {
+            projectile.AddComponent<AnimatedSprite2D>().Play(frames, 14f);
+        }
 
         BoxCollider2D collider = projectile.AddComponent<BoxCollider2D>();
         collider.isTrigger = true;
@@ -123,6 +142,22 @@ public class KitingShooterEnemyAI : MonoBehaviour
         if (playerObject != null)
         {
             player = playerObject.transform;
+        }
+    }
+
+    private void UpdateFacing()
+    {
+        if (spriteRenderer == null || player == null)
+        {
+            return;
+        }
+
+        float direction = Mathf.Abs(body.linearVelocity.x) > 0.05f
+            ? body.linearVelocity.x
+            : player.position.x - transform.position.x;
+        if (Mathf.Abs(direction) > 0.05f)
+        {
+            spriteRenderer.flipX = direction < 0f;
         }
     }
 }

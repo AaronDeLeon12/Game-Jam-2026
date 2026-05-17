@@ -42,6 +42,11 @@ public class Enemy : MonoBehaviour, IDamageable
 
     private void Awake()
     {
+        if (GetComponent<EnemySaveTracker>() == null)
+        {
+            gameObject.AddComponent<EnemySaveTracker>();
+        }
+
         body = GetComponent<Rigidbody2D>();
         bodyCollider = GetComponent<Collider2D>();
         body.freezeRotation = true;
@@ -132,6 +137,12 @@ public class Enemy : MonoBehaviour, IDamageable
         if (health <= 0f)
         {
             SessionStats.Record("enemies_killed");
+            EnemySaveTracker tracker = GetComponent<EnemySaveTracker>();
+            if (tracker != null)
+            {
+                tracker.RecordDefeat();
+            }
+
             Destroy(gameObject);
         }
     }
