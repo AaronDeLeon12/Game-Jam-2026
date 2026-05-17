@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class GameHud : MonoBehaviour
@@ -8,6 +9,9 @@ public class GameHud : MonoBehaviour
     private float lastHealth = -1f;
     private float flashHealth;
     private float healthFlashTimer;
+    private float lastMana = -1f;
+    private float flashMana;
+    private float manaFlashTimer;
     private const float HealthFlashDuration = 0.75f;
 
     public void SetPlayerStats(PlayerStats stats)
@@ -38,12 +42,11 @@ public class GameHud : MonoBehaviour
         }
 
         float hudAlpha = PauseMenu.IsPaused ? 0.3f : 1f;
-        UpdateHealthFlash();
+        UpdateResourceFlashes();
 
-        DrawResourceBar(new Rect(92f, 38f, 350f, 48f), playerStats.Health / playerStats.MaxHealth, Color.red, hudAlpha, 0);
-        DrawHealthLossFlash(new Rect(92f, 38f, 350f, 48f), hudAlpha);
-        DrawResourceBar(new Rect(92f, 112f, 350f, 48f), playerStats.Mana / playerStats.MaxMana, Color.blue, hudAlpha, 1);
-        DrawEquippedSpell(new Rect(472f, 56f, 72f, 72f), hudAlpha);
+        DrawFramedResourceBar(new Rect(18f, 12f, 430f, 143f), playerStats.Health, playerStats.MaxHealth, flashHealth, healthFlashTimer, Color.red, hudAlpha);
+        DrawFramedResourceBar(new Rect(18f, 88f, 430f, 143f), playerStats.Mana, playerStats.MaxMana, flashMana, manaFlashTimer, Color.blue, hudAlpha);
+        DrawEquippedSpell(new Rect(476f, 68f, 72f, 72f), hudAlpha);
 
         if (playerStats.IsDead)
         {
@@ -71,42 +74,57 @@ public class GameHud : MonoBehaviour
         GUI.color = Color.white;
     }
 
-    private void DrawResourceBar(Rect rect, float percent, Color fillColor, float alpha, int iconIndex)
+    private void DrawFramedResourceBar(Rect frameRect, float value, float maxValue, float flashValue, float flashTimer, Color fillColor, float alpha)
     {
         EnsureHealthUiTexture();
+
+        Rect fillRect = new Rect(
+            frameRect.x + frameRect.width * 0.22f,
+            frameRect.y + frameRect.height * 0.39f,
+            frameRect.width * 0.68f,
+            frameRect.height * 0.18f);
+
+        GUI.color = new Color(0f, 0f, 0f, alpha * 0.9f);
+        GUI.DrawTexture(fillRect, Texture2D.whiteTexture);
+
+        float percent = maxValue > 0f ? Mathf.Clamp01(value / maxValue) : 0f;
+        GUI.color = new Color(fillColor.r, fillColor.g, fillColor.b, alpha);
+        GUI.DrawTexture(new Rect(fillRect.x + 2f, fillRect.y + 2f, (fillRect.width - 4f) * percent, fillRect.height - 4f), Texture2D.whiteTexture);
+
+        DrawResourceSpendFlash(fillRect, value, maxValue, flashValue, flashTimer, alpha);
+
         if (healthUiTexture != null)
         {
-            Rect iconRect = new Rect(rect.x - 58f, rect.y - 4f, 52f, 52f);
             GUI.color = new Color(1f, 1f, 1f, alpha);
-            GUI.DrawTextureWithTexCoords(iconRect, healthUiTexture, GetHealthIconTexCoords(iconIndex));
+            GUI.DrawTexture(frameRect, healthUiTexture, ScaleMode.StretchToFill, true);
         }
 
-        DrawBar(rect, percent, fillColor, alpha);
+        GUI.color = Color.white;
     }
 
-    private void DrawHealthLossFlash(Rect rect, float alpha)
+    private void DrawResourceSpendFlash(Rect fillRect, float value, float maxValue, float flashValue, float flashTimer, float alpha)
     {
-        if (healthFlashTimer <= 0f || playerStats == null || playerStats.MaxHealth <= 0f)
+        if (flashTimer <= 0f || maxValue <= 0f)
         {
             return;
         }
 
-        float currentPercent = Mathf.Clamp01(playerStats.Health / playerStats.MaxHealth);
-        float flashPercent = Mathf.Clamp01(flashHealth / playerStats.MaxHealth);
+        float currentPercent = Mathf.Clamp01(value / maxValue);
+        float flashPercent = Mathf.Clamp01(flashValue / maxValue);
         if (flashPercent <= currentPercent)
         {
             return;
         }
 
-        float fade = Mathf.Clamp01(healthFlashTimer / HealthFlashDuration);
-        float x = rect.x + 2f + (rect.width - 4f) * currentPercent;
-        float width = (rect.width - 4f) * (flashPercent - currentPercent);
+        float fade = Mathf.Clamp01(flashTimer / HealthFlashDuration);
+        float x = fillRect.x + 2f + (fillRect.width - 4f) * currentPercent;
+        float width = (fillRect.width - 4f) * (flashPercent - currentPercent);
         GUI.color = new Color(1f, 1f, 1f, alpha * fade);
-        GUI.DrawTexture(new Rect(x, rect.y + 2f, width, rect.height - 4f), Texture2D.whiteTexture);
+        GUI.DrawTexture(new Rect(x, fillRect.y + 2f, width, fillRect.height - 4f), Texture2D.whiteTexture);
         GUI.color = Color.white;
     }
 
-    private void UpdateHealthFlash()
+    private void UpdateResourceFlashes()
     {
         if (playerStats == null)
         {
@@ -117,7 +135,6 @@ public class GameHud : MonoBehaviour
         {
             lastHealth = playerStats.Health;
             flashHealth = playerStats.Health;
-            return;
         }
 
         if (playerStats.Health < lastHealth)
@@ -136,22 +153,118 @@ public class GameHud : MonoBehaviour
             healthFlashTimer = Mathf.Max(0f, healthFlashTimer - Time.unscaledDeltaTime);
             flashHealth = Mathf.Lerp(playerStats.Health, flashHealth, healthFlashTimer / HealthFlashDuration);
         }
+
+        if (lastMana < 0f)
+        {
+            lastMana = playerStats.Mana;
+            flashMana = playerStats.Mana;
+        }
+
+        if (playerStats.Mana < lastMana)
+        {
+            flashMana = lastMana;
+            manaFlashTimer = HealthFlashDuration;
+        }
+        else if (playerStats.Mana > lastMana)
+        {
+            flashMana = playerStats.Mana;
+        }
+
+        lastMana = playerStats.Mana;
+        if (manaFlashTimer > 0f)
+        {
+            manaFlashTimer = Mathf.Max(0f, manaFlashTimer - Time.unscaledDeltaTime);
+            flashMana = Mathf.Lerp(playerStats.Mana, flashMana, manaFlashTimer / HealthFlashDuration);
+        }
     }
 
     private void EnsureHealthUiTexture()
     {
         if (healthUiTexture == null)
         {
-            healthUiTexture = Resources.Load<Texture2D>("UI/HealthBarUI");
+            Texture2D source = Resources.Load<Texture2D>("UI/HealthBarUI");
+            if (source != null)
+            {
+                healthUiTexture = CreateTransparentFrameTexture(source);
+            }
         }
     }
 
-    private static Rect GetHealthIconTexCoords(int iconIndex)
+    private static Texture2D CreateTransparentFrameTexture(Texture2D source)
     {
-        const float iconCount = 3f;
-        float width = 1f / iconCount;
-        int clamped = Mathf.Clamp(iconIndex, 0, 2);
-        return new Rect(width * clamped, 0f, width, 1f);
+        Color[] pixels = source.GetPixels();
+        bool[] background = FindUiBackgroundMask(source, pixels);
+
+        for (int i = 0; i < pixels.Length; i++)
+        {
+            if (background[i])
+            {
+                pixels[i] = Color.clear;
+            }
+        }
+
+        Texture2D texture = new Texture2D(source.width, source.height, TextureFormat.RGBA32, false);
+        texture.SetPixels(pixels);
+        texture.Apply(false, false);
+        texture.filterMode = FilterMode.Bilinear;
+        texture.wrapMode = TextureWrapMode.Clamp;
+        return texture;
+    }
+
+    private static bool[] FindUiBackgroundMask(Texture2D texture, Color[] pixels)
+    {
+        bool[] visited = new bool[pixels.Length];
+        Queue<int> queue = new Queue<int>();
+
+        void TryEnqueue(int x, int y)
+        {
+            if (x < 0 || x >= texture.width || y < 0 || y >= texture.height)
+            {
+                return;
+            }
+
+            int index = y * texture.width + x;
+            if (visited[index] || !IsUiBackground(pixels[index]))
+            {
+                return;
+            }
+
+            visited[index] = true;
+            queue.Enqueue(index);
+        }
+
+        for (int x = 0; x < texture.width; x++)
+        {
+            TryEnqueue(x, 0);
+            TryEnqueue(x, texture.height - 1);
+        }
+
+        for (int y = 0; y < texture.height; y++)
+        {
+            TryEnqueue(0, y);
+            TryEnqueue(texture.width - 1, y);
+        }
+
+        while (queue.Count > 0)
+        {
+            int index = queue.Dequeue();
+            int x = index % texture.width;
+            int y = index / texture.width;
+
+            TryEnqueue(x + 1, y);
+            TryEnqueue(x - 1, y);
+            TryEnqueue(x, y + 1);
+            TryEnqueue(x, y - 1);
+        }
+
+        return visited;
+    }
+
+    private static bool IsUiBackground(Color color)
+    {
+        bool veryLight = color.r > 0.88f && color.g > 0.88f && color.b > 0.88f;
+        float channelSpread = Mathf.Max(color.r, Mathf.Max(color.g, color.b)) - Mathf.Min(color.r, Mathf.Min(color.g, color.b));
+        return veryLight && channelSpread < 0.08f;
     }
 
     private void DrawEquippedSpell(Rect rect, float alpha)

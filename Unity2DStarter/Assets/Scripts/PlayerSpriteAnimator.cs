@@ -15,6 +15,7 @@ public class PlayerSpriteAnimator : MonoBehaviour
     [SerializeField] private float minimumWalkSpeed = 0.05f;
     [SerializeField] private float targetWorldHeight = 1.45f;
     [SerializeField] private float crouchVisualScaleMultiplier = 0.72f;
+    [SerializeField] private float deathGroundOffset = -0.2f;
 
     private readonly List<Sprite> walkFrames = new List<Sprite>();
     private readonly List<Sprite> jumpFrames = new List<Sprite>();
@@ -298,8 +299,8 @@ public class PlayerSpriteAnimator : MonoBehaviour
         crouchWalkFrames.AddRange(LoadSheetFrames("Player/States/caminandoAgachada", CrouchWalkSheetFrameRects, "crouch_walk"));
         teleportVanishFrames.AddRange(LoadSheetFrames("Player/States/teleportCycle", TeleportVanishRects, "teleport_vanish"));
         teleportAppearFrames.AddRange(LoadSheetFrames("Player/States/teleportCycle", TeleportAppearRects, "teleport_appear"));
-        spellAttackFrames.AddRange(RuntimeSpriteCropper.LoadGridFrames("Player/States/spellAttackAnim", 4, 3, 320f, 10));
-        deathFrames.AddRange(RuntimeSpriteCropper.LoadGridFrames("Player/States/deathAnim", 4, 3, 320f, 10));
+        spellAttackFrames.AddRange(RuntimeSpriteCropper.LoadFixedGridFrames("Player/States/spellAttackAnim", 4, 3, 320f));
+        deathFrames.AddRange(RuntimeSpriteCropper.LoadFixedGridFrames("Player/States/deathAnim", 4, 3, 320f));
     }
 
     private void ApplyIdleFrame()
@@ -470,23 +471,24 @@ public class PlayerSpriteAnimator : MonoBehaviour
         float frameDuration = duration / Mathf.Max(1, deathFrames.Count);
         for (int i = 0; i < deathFrames.Count; i++)
         {
-            ApplySprite(deathFrames[i], true);
+            ApplySprite(deathFrames[i], true, 1f, deathGroundOffset);
             yield return new WaitForSeconds(frameDuration);
         }
 
         if (deathFrames.Count > 0)
         {
-            ApplySprite(deathFrames[deathFrames.Count - 1], true);
+            ApplySprite(deathFrames[deathFrames.Count - 1], true, 1f, deathGroundOffset);
         }
     }
 
-    private void ApplySprite(Sprite sprite, bool normalizeHeight = true, float relativeScaleMultiplier = 1f)
+    private void ApplySprite(Sprite sprite, bool normalizeHeight = true, float relativeScaleMultiplier = 1f, float localYOffset = 0f)
     {
         if (spriteRenderer == null || sprite == null)
         {
             return;
         }
 
+        spriteRenderer.transform.localPosition = new Vector3(0f, localYOffset, 0f);
         spriteRenderer.sprite = sprite;
         if (normalizeHeight)
         {

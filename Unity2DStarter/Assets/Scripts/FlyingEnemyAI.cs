@@ -14,6 +14,8 @@ public class FlyingEnemyAI : MonoBehaviour
     [SerializeField] private float recoveryDuration = 0.9f;
 
     private Rigidbody2D body;
+    private SpriteRenderer spriteRenderer;
+    private SpriteRenderer chargeGlowRenderer;
     private Transform player;
     private Vector3 homePosition;
     private Vector2 dashDirection;
@@ -50,13 +52,14 @@ public class FlyingEnemyAI : MonoBehaviour
 
     private void SetupVisual()
     {
-        SpriteRenderer renderer = GetComponent<SpriteRenderer>();
-        if (renderer == null)
+        spriteRenderer = GetComponent<SpriteRenderer>();
+        if (spriteRenderer == null)
         {
-            renderer = gameObject.AddComponent<SpriteRenderer>();
+            spriteRenderer = gameObject.AddComponent<SpriteRenderer>();
         }
 
-        renderer.sortingOrder = 12;
+        spriteRenderer.sortingOrder = 12;
+        spriteRenderer.color = Color.white;
         ResourceSheetAnimator2D animator = GetComponent<ResourceSheetAnimator2D>();
         if (animator == null)
         {
@@ -64,6 +67,24 @@ public class FlyingEnemyAI : MonoBehaviour
         }
 
         animator.Configure("Enemies/evilFairy", 4, 3, 8f, true, 1, 256f, 10);
+
+        Transform glow = transform.Find("Charge Glow");
+        if (glow == null)
+        {
+            glow = new GameObject("Charge Glow").transform;
+            glow.SetParent(transform, false);
+        }
+
+        chargeGlowRenderer = glow.GetComponent<SpriteRenderer>();
+        if (chargeGlowRenderer == null)
+        {
+            chargeGlowRenderer = glow.gameObject.AddComponent<SpriteRenderer>();
+        }
+
+        chargeGlowRenderer.sortingOrder = spriteRenderer.sortingOrder - 1;
+        chargeGlowRenderer.color = new Color(1f, 0.9f, 0.1f, 0.28f);
+        chargeGlowRenderer.enabled = false;
+        glow.localScale = new Vector3(1.08f, 1.08f, 1f);
     }
 
     private void Update()
@@ -108,7 +129,6 @@ public class FlyingEnemyAI : MonoBehaviour
                 stateEndTime = Time.time + windupDuration * DifficultyRules.EnemyCooldownMultiplier;
                 dashDirection = ((Vector2)player.position - (Vector2)transform.position).normalized;
                 body.linearVelocity = Vector2.zero;
-                HitFlash2D.Play(gameObject, new Color(1f, 0.85f, 0.15f), windupDuration);
             }
         }
         else
@@ -149,6 +169,31 @@ public class FlyingEnemyAI : MonoBehaviour
         {
             state = State.Patrol;
         }
+    }
+
+    private void LateUpdate()
+    {
+        UpdateChargeGlow();
+    }
+
+    private void UpdateChargeGlow()
+    {
+        if (chargeGlowRenderer == null || spriteRenderer == null)
+        {
+            return;
+        }
+
+        bool showGlow = state == State.Windup;
+        chargeGlowRenderer.enabled = showGlow;
+        if (!showGlow)
+        {
+            return;
+        }
+
+        chargeGlowRenderer.sprite = spriteRenderer.sprite;
+        chargeGlowRenderer.flipX = spriteRenderer.flipX;
+        float pulse = Mathf.PingPong(Time.time * 5f, 1f);
+        chargeGlowRenderer.color = new Color(1f, 0.88f, 0.05f, Mathf.Lerp(0.18f, 0.34f, pulse));
     }
 
     private void EnterRecover()

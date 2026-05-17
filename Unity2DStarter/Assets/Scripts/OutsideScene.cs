@@ -50,7 +50,7 @@ public class OutsideScene : MonoBehaviour
 
     private void BuildSaveVendorArea()
     {
-        Vector3 housePosition = new Vector3(14f, 3.15f, 0f);
+        Vector3 housePosition = new Vector3(14f, 1.1f, 0f);
 
         GameObject vendorHouse = new GameObject("Casa del Vendedor Completa");
         vendorHouse.transform.SetParent(transform, false);
@@ -68,7 +68,7 @@ public class OutsideScene : MonoBehaviour
 
         GameObject vendor = new GameObject("Vendedor Save Machine");
         vendor.transform.SetParent(transform, false);
-        vendor.transform.position = new Vector3(14f, 3.35f, 0f);
+        vendor.transform.position = new Vector3(14f, 1.3f, 0f);
         vendor.AddComponent<SpriteRenderer>();
         vendor.AddComponent<VendorSpriteAnimator>();
 

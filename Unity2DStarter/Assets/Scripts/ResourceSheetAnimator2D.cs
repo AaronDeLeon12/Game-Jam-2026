@@ -47,7 +47,7 @@ public class ResourceSheetAnimator2D : MonoBehaviour
         {
             spriteRenderer = GetComponent<SpriteRenderer>();
         }
-        Sprite[] loaded = RuntimeSpriteCropper.LoadGridFrames(resourcePath, columns, rows, pixelsPerUnit, cropPadding);
+        Sprite[] loaded = RuntimeSpriteCropper.LoadFixedGridFrames(resourcePath, columns, rows, pixelsPerUnit);
         int count = Mathf.Max(0, loaded.Length - ignoreLastFrames);
         frames = new Sprite[count];
         for (int i = 0; i < count; i++)
@@ -60,6 +60,7 @@ public class ResourceSheetAnimator2D : MonoBehaviour
         if (spriteRenderer != null && frames.Length > 0)
         {
             spriteRenderer.sprite = frames[0];
+            spriteRenderer.color = Color.white;
             SpriteLit.Apply(spriteRenderer);
         }
     }

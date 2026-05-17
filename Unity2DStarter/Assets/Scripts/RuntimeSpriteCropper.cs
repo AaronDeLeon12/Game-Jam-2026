@@ -53,6 +53,37 @@ public static class RuntimeSpriteCropper
         return frames.ToArray();
     }
 
+    public static Sprite[] LoadFixedGridFrames(string resourcePath, int columns, int rows, float pixelsPerUnit = 256f)
+    {
+        Texture2D sheet = Resources.Load<Texture2D>(resourcePath);
+        if (sheet == null || columns <= 0 || rows <= 0)
+        {
+            return new Sprite[0];
+        }
+
+        List<Sprite> frames = new List<Sprite>();
+        int frameWidth = sheet.width / columns;
+        int frameHeight = sheet.height / rows;
+
+        for (int row = 0; row < rows; row++)
+        {
+            for (int col = 0; col < columns; col++)
+            {
+                int x = col * frameWidth;
+                int y = sheet.height - (row + 1) * frameHeight;
+
+                Texture2D frame = new Texture2D(frameWidth, frameHeight, TextureFormat.RGBA32, false);
+                frame.SetPixels(sheet.GetPixels(x, y, frameWidth, frameHeight));
+                frame.Apply(false, false);
+
+                Texture2D transparent = MakeTransparent(frame);
+                frames.Add(Sprite.Create(transparent, new Rect(0f, 0f, frameWidth, frameHeight), new Vector2(0.5f, 0.5f), pixelsPerUnit));
+            }
+        }
+
+        return frames.ToArray();
+    }
+
     private static Texture2D MakeTransparent(Texture2D source)
     {
         Color background = source.GetPixel(2, source.height - 2);

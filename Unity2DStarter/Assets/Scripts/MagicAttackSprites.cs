@@ -69,12 +69,12 @@ public static class MagicAttackSprites
 
         Rect[] topLeftRects =
         {
-            new Rect(82f, 108f, 215f, 205f),
-            new Rect(370f, 105f, 320f, 290f),
-            new Rect(720f, 110f, 300f, 290f),
-            new Rect(25f, 440f, 335f, 315f),
-            new Rect(335f, 440f, 385f, 335f),
-            new Rect(695f, 440f, 325f, 335f)
+            new Rect(18f, 70f, 345f, 345f),
+            new Rect(352f, 70f, 345f, 345f),
+            new Rect(690f, 70f, 345f, 345f),
+            new Rect(18f, 425f, 345f, 345f),
+            new Rect(352f, 425f, 345f, 345f),
+            new Rect(690f, 425f, 345f, 345f)
         };
 
         List<Sprite> frames = new List<Sprite>();
