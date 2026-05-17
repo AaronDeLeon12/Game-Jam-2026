@@ -1,49 +1,90 @@
+using System;
 using UnityEngine;
 
+/// <summary>A single line of text shown in a speech.</summary>
+[Serializable]
+public class Dialogue
+{
+    [TextArea(2, 4)] public string text;
+}
+
 /// <summary>
-/// An NPC the player can talk to. Add this to any character (e.g. the cat).
-/// Press E near it to start the conversation; press E again to advance each
-/// line; the last line ends it. The player is frozen while talking.
+/// One interaction's worth of conversation: a speech is several Dialogues
+/// shown one after another (advance with E) when the player talks once.
+/// </summary>
+[Serializable]
+public class Speech
+{
+    public Dialogue[] dialogues;
+}
+
+/// <summary>
+/// An NPC the player talks to. Pressing E "looks for an interaction" and
+/// plays the next Speech; advancing E steps through that speech's dialogues.
+/// Speeches are played in order and loop back to the first.
 /// </summary>
 public class Npc : MonoBehaviour, IInteractable
 {
-    [SerializeField] private string npcName = "Cat";
-    [SerializeField] [TextArea(2, 4)] private string[] lines = { "Meow.", "..." };
+    [SerializeField] private string npcName = "Orpheus";
+    [SerializeField] private Speech[] speeches;
     [SerializeField] private string promptText = "Press E to talk";
 
-    private int index;
+    private int speechIndex;
+    private int dialogueIndex;
     private bool talking;
     private PlayerMovement2D playerMovement;
 
     public void Interact()
     {
-        if (lines == null || lines.Length == 0)
+        if (speeches == null || speeches.Length == 0)
         {
             return;
         }
 
         if (!talking)
         {
-            talking = true;
-            index = 0;
-            SetPlayerFrozen(true);
+            StartSpeech();
         }
         else
         {
-            index++;
-            if (index >= lines.Length)
+            dialogueIndex++;
+            if (dialogueIndex >= CurrentDialogues().Length)
             {
-                EndConversation();
+                EndSpeech();
             }
         }
     }
 
     public string GetPromptText() => promptText;
 
-    private void EndConversation()
+    private Dialogue[] CurrentDialogues()
+    {
+        Speech s = speeches[speechIndex];
+        return s != null && s.dialogues != null ? s.dialogues : Array.Empty<Dialogue>();
+    }
+
+    private void StartSpeech()
+    {
+        // Skip empty speeches; bail out if none have any dialogue.
+        for (int tries = 0; tries < speeches.Length; tries++)
+        {
+            if (CurrentDialogues().Length > 0)
+            {
+                talking = true;
+                dialogueIndex = 0;
+                SetPlayerFrozen(true);
+                return;
+            }
+
+            speechIndex = (speechIndex + 1) % speeches.Length;
+        }
+    }
+
+    private void EndSpeech()
     {
         talking = false;
-        index = 0;
+        dialogueIndex = 0;
+        speechIndex = (speechIndex + 1) % speeches.Length; // next speech, looping
         SetPlayerFrozen(false);
     }
 
@@ -63,6 +104,12 @@ public class Npc : MonoBehaviour, IInteractable
     private void OnGUI()
     {
         if (!talking)
+        {
+            return;
+        }
+
+        Dialogue[] dialogues = CurrentDialogues();
+        if (dialogueIndex >= dialogues.Length)
         {
             return;
         }
@@ -89,7 +136,8 @@ public class Npc : MonoBehaviour, IInteractable
             wordWrap = true,
             normal = { textColor = Color.white }
         };
-        GUI.Label(new Rect(rect.x + 22f, rect.y + 48f, rect.width - 44f, rect.height - 84f), lines[index], textStyle);
+        GUI.Label(new Rect(rect.x + 22f, rect.y + 48f, rect.width - 44f, rect.height - 84f),
+            dialogues[dialogueIndex].text, textStyle);
 
         GUIStyle hintStyle = new GUIStyle(GUI.skin.label)
         {
@@ -98,6 +146,6 @@ public class Npc : MonoBehaviour, IInteractable
             normal = { textColor = new Color(0.7f, 0.7f, 0.7f) }
         };
         GUI.Label(new Rect(rect.x, rect.y + rect.height - 28f, rect.width - 18f, 20f),
-            index < lines.Length - 1 ? "E - continue" : "E - end", hintStyle);
+            dialogueIndex < dialogues.Length - 1 ? "E - continue" : "E - end", hintStyle);
     }
 }
