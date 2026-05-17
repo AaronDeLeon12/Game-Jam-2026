@@ -11,7 +11,7 @@ using UnityEngine;
 public class FinalBoss : MonoBehaviour, IDamageable
 {
     [SerializeField] private float maxHealth = 3000f;
-    [SerializeField] private float moveSpeed = 2.5f;
+    [SerializeField] private float moveSpeed = 3f; // 20% faster than the original 2.5
     [SerializeField] private float stopDistance = 0.8f;
     [SerializeField] private LayerMask groundLayer = ~0;
     [SerializeField] private float groundCheckDistance = 0.7f;
@@ -26,6 +26,8 @@ public class FinalBoss : MonoBehaviour, IDamageable
     [Header("Distance Attack")]
     [SerializeField] private float verticalAttackDistance = 3f;  // 3 tiles in Y
     [SerializeField] private float verticalHoldTime = 0.6f;        // sustained for 2s
+    [SerializeField] private float horizontalAttackDistance = 4f;  // 4 tiles in X
+    [SerializeField] private float horizontalAttackCooldown = 3f;  // anti-spam gate
     [SerializeField] private float shootDuration = 0.9f;
     [SerializeField] private float shootReleaseTime = 0.5f;      // when projectile spawns
     [SerializeField] private float distanceAttackCooldown = 2.5f;
@@ -40,6 +42,7 @@ public class FinalBoss : MonoBehaviour, IDamageable
 
     private Rigidbody2D body;
     private Collider2D bodyCollider;
+    private FinalBossAnimator animator;
     private Transform player;
     private PlayerStats playerStats;
     private int facingDirection = 1;
@@ -55,6 +58,7 @@ public class FinalBoss : MonoBehaviour, IDamageable
     private bool shotFired;
     private float verticalFarTimer;
     private float nextDistanceAttackTime;
+    private float nextHorizontalAttackTime;
 
     public bool IsMoving { get; private set; }
     public bool IsAttacking => isAttacking;
@@ -68,6 +72,10 @@ public class FinalBoss : MonoBehaviour, IDamageable
     public void TakeDamage(float amount)
     {
         health = Mathf.Max(0f, health - Mathf.Max(0f, amount));
+        if (animator != null)
+        {
+            animator.FlashDamage();
+        }
         if (health <= 0f)
         {
             Destroy(gameObject);
@@ -78,6 +86,7 @@ public class FinalBoss : MonoBehaviour, IDamageable
     {
         body = GetComponent<Rigidbody2D>();
         bodyCollider = GetComponent<Collider2D>();
+        animator = GetComponent<FinalBossAnimator>();
         body.freezeRotation = true;
         health = maxHealth;
 
@@ -171,6 +180,21 @@ public class FinalBoss : MonoBehaviour, IDamageable
             isShooting = true;
             shootTimer = 0f;
             shotFired = false;
+            return;
+        }
+
+        // Player too far horizontally (> 4 tiles in X) -> stand and shoot,
+        // gated by its own 3s cooldown so the boss does not spam it.
+        if (grounded && Mathf.Abs(dx) > horizontalAttackDistance
+            && Time.time >= nextHorizontalAttackTime)
+        {
+            facingDirection = dx >= 0f ? 1 : -1;
+            body.linearVelocity = new Vector2(0f, body.linearVelocity.y);
+            IsMoving = false;
+            isShooting = true;
+            shootTimer = 0f;
+            shotFired = false;
+            nextHorizontalAttackTime = Time.time + horizontalAttackCooldown;
             return;
         }
 

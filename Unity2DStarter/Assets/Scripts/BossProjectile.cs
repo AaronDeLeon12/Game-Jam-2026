@@ -46,14 +46,23 @@ public class BossProjectile : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        PlayerStats stats = other.GetComponent<PlayerStats>();
-        if (stats != null)
+        // Hit the shield first if it is up: damage the shield, not the player.
+        CircleShield shield = other.GetComponent<CircleShield>();
+        if (shield != null)
         {
-            stats.TakeDamage(damage);
+            shield.TakeDamage(damage);
+            Destroy(gameObject);
+            return;
+        }
+
+        // Otherwise route through the shared helper so blocking / a shield
+        // child is respected just like the regular enemy projectiles.
+        if (EnemyDamage2D.TryDamagePlayer(other, damage))
+        {
             Destroy(gameObject);
         }
 
         // Passes through platforms / ground / walls. It only ends on a player
-        // hit or when its lifetime runs out (see Update).
+        // (or shield) hit or when its lifetime runs out (see Update).
     }
 }
