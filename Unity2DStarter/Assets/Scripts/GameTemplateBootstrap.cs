@@ -122,7 +122,7 @@ public class GameTemplateBootstrap : MonoBehaviour
 
     private static void CreateHeavyEnemy(string name, Vector3 position)
     {
-        GameObject enemy = CreateEnemyBase(name, position, new Vector3(4f, 4f, 1f), new Color(0.55f, 0.1f, 0.75f), 300f, false);
+        GameObject enemy = CreateEnemyBase(name, position, new Vector3(3f, 3f, 1f), new Color(0.55f, 0.1f, 0.75f), 300f, false);
         GetOrAdd<HeavyEnemyAI>(enemy);
     }
 

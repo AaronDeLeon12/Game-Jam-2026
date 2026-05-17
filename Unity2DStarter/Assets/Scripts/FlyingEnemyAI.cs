@@ -7,7 +7,6 @@ public class FlyingEnemyAI : MonoBehaviour
     [SerializeField] private float moveSpeed = 17.5f;
     [SerializeField] private float patrolRadius = 3f;
     [SerializeField] private float homeLeashRadius = 8f;
-    [SerializeField] private float orbitRadius = 2.2f;
     [SerializeField] private float dashDamage = 10f;
     [SerializeField] private float dashCooldown = 2.2f;
     [SerializeField] private float windupDuration = 0.45f;
@@ -20,14 +19,12 @@ public class FlyingEnemyAI : MonoBehaviour
     private Vector2 dashDirection;
     private float nextAttackTime;
     private float stateEndTime;
-    private float orbitAngle;
     private bool dealtDamageThisDash;
     private State state;
 
     private enum State
     {
         Patrol,
-        Orbit,
         Windup,
         Dash,
         Recover
@@ -84,10 +81,7 @@ public class FlyingEnemyAI : MonoBehaviour
     {
         if (player != null && Vector2.Distance(player.position, homePosition) <= homeLeashRadius)
         {
-            state = State.Orbit;
-            orbitAngle += Time.deltaTime * moveSpeed * 0.7f;
-            Vector2 target = (Vector2)player.position + new Vector2(Mathf.Cos(orbitAngle), Mathf.Sin(orbitAngle)) * orbitRadius;
-            MoveToward(target, moveSpeed);
+            body.linearVelocity = Vector2.zero;
 
             if (Time.time >= nextAttackTime)
             {

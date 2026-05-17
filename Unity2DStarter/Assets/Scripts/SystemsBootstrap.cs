@@ -112,6 +112,7 @@ public class SystemsBootstrap : MonoBehaviour
         }
 
         PlayerStats = GetOrAdd<PlayerStats>(Player);
+        GetOrAdd<PlayerActionCounter>(Player);
 
         if (Player.GetComponent<PlayerCombat>() == null)
         {

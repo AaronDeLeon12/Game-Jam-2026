@@ -22,6 +22,7 @@ public class PlayerCombat : MonoBehaviour
 
     private PlayerMovement2D movement;
     private PlayerStats stats;
+    private PlayerActionCounter actionCounter;
     private float nextCastTime;
     private SpellType equippedSpell = SpellType.Square;
 
@@ -32,6 +33,7 @@ public class PlayerCombat : MonoBehaviour
     {
         movement = GetComponent<PlayerMovement2D>();
         stats = GetComponent<PlayerStats>();
+        actionCounter = GetComponent<PlayerActionCounter>();
     }
 
     private void Update()
@@ -92,15 +94,31 @@ public class PlayerCombat : MonoBehaviour
     {
         if (equippedSpell == SpellType.Circle)
         {
+            RecordAction("spell_circle_shield");
             CastCircleShield();
         }
         else if (equippedSpell == SpellType.Knife)
         {
+            RecordAction("attack_knife");
             CastKnifeAttack();
         }
         else
         {
+            RecordAction(equippedSpell == SpellType.Triangle ? "spell_triangle" : "spell_square");
             CastProjectile();
+        }
+    }
+
+    private void RecordAction(string actionName)
+    {
+        if (actionCounter == null)
+        {
+            actionCounter = GetComponent<PlayerActionCounter>();
+        }
+
+        if (actionCounter != null)
+        {
+            actionCounter.Record(actionName);
         }
     }
 

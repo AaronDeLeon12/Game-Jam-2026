@@ -14,9 +14,6 @@ public class PlayerMovement2D : MonoBehaviour
     [SerializeField] private float dashDistance = 3f;
     [SerializeField] private float dashDisappearTime = 0.12f;
     [SerializeField] private float dashCooldown = 1.5f;
-    [SerializeField] private float dashManaCost = 10f;
-    [SerializeField] private float doubleJumpManaCost = 5f;
-    [SerializeField] private float movementManaRegenDelay = 0.3f;
     [SerializeField] private float duckSpeedMultiplier = 0.5f;
     [SerializeField] private float duckHitboxHeightMultiplier = 0.5f;
     [SerializeField] private float platformDropDuration = 0.35f;
@@ -26,6 +23,7 @@ public class PlayerMovement2D : MonoBehaviour
     private BoxCollider2D boxCollider;
     private SpriteRenderer playerRenderer;
     private PlayerStats playerStats;
+    private PlayerActionCounter actionCounter;
     private float horizontalInput;
     private bool jumpRequested;
     private bool dashRequested;
@@ -50,6 +48,7 @@ public class PlayerMovement2D : MonoBehaviour
         boxCollider = GetComponent<BoxCollider2D>();
         playerRenderer = GetComponentInChildren<SpriteRenderer>();
         playerStats = GetComponent<PlayerStats>();
+        actionCounter = GetComponent<PlayerActionCounter>();
         body.gravityScale = gravityScale;
         body.freezeRotation = true;
 
@@ -106,21 +105,23 @@ public class PlayerMovement2D : MonoBehaviour
         if (JumpWasPressed() && isGrounded && !isDucking && !isBlocking)
         {
             jumpRequested = true;
+            RecordAction("jump");
             GameAudio.PlaySfx("jumpsf", transform.position, 0.75f);
         }
-        else if (JumpWasPressed() && !isGrounded && !hasDoubleJumped && !isBlocking && TryPayMovementCost(doubleJumpManaCost))
+        else if (JumpWasPressed() && !isGrounded && !hasDoubleJumped && !isBlocking)
         {
             jumpRequested = true;
             hasDoubleJumped = true;
+            RecordAction("double_jump");
             GameAudio.PlaySfx("doubleJumpSF", transform.position, 0.75f);
         }
 
         if ((Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.RightShift))
             && Time.time >= nextDashTime
-            && !isBlocking
-            && TryPayMovementCost(dashManaCost))
+            && !isBlocking)
         {
             dashRequested = true;
+            RecordAction("dash");
         }
     }
 
@@ -181,14 +182,17 @@ public class PlayerMovement2D : MonoBehaviour
         return Input.GetKey(KeyCode.Space) || Input.GetKey(KeyCode.W);
     }
 
-    private bool TryPayMovementCost(float manaCost)
+    private void RecordAction(string actionName)
     {
-        if (playerStats == null)
+        if (actionCounter == null)
         {
-            playerStats = GetComponent<PlayerStats>();
+            actionCounter = GetComponent<PlayerActionCounter>();
         }
 
-        return playerStats == null || playerStats.TryPayCost(manaCost, movementManaRegenDelay);
+        if (actionCounter != null)
+        {
+            actionCounter.Record(actionName);
+        }
     }
 
     private void ApplyDuckHitbox()

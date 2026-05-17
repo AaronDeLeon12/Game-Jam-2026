@@ -46,7 +46,7 @@ public class PlatformTestLevel : MonoBehaviour
 
         CreateEnemy("Flying Enemy Prototype", new Vector3(31f, 1.5f, 0f), Vector3.one, new Color(0.8f, 0.25f, 1f), 50f, true).AddComponent<FlyingEnemyAI>();
         CreateEnemy("Small Contact Enemy Prototype", new Vector3(36f, -2.25f, 0f), new Vector3(0.65f, 0.65f, 1f), new Color(1f, 0.25f, 0.25f), 80f, false).AddComponent<SmallContactEnemyAI>();
-        CreateEnemy("Heavy Enemy Prototype", new Vector3(43f, -0.5f, 0f), new Vector3(4f, 4f, 1f), new Color(0.55f, 0.1f, 0.75f), 300f, false).AddComponent<HeavyEnemyAI>();
+        CreateEnemy("Heavy Enemy Prototype", new Vector3(43f, -1f, 0f), new Vector3(3f, 3f, 1f), new Color(0.55f, 0.1f, 0.75f), 300f, false).AddComponent<HeavyEnemyAI>();
         CreateEnemy("Kiting Shooter Enemy Prototype", new Vector3(53f, -1.75f, 0f), Vector3.one, new Color(0.1f, 0.75f, 0.25f), 100f, false).AddComponent<KitingShooterEnemyAI>();
     }
 

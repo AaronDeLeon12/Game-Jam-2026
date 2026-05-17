@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class MeleeAttack2D : MonoBehaviour
 {
-    private readonly HashSet<EnemyDummy> hitEnemies = new HashSet<EnemyDummy>();
+    private readonly HashSet<Component> hitTargets = new HashSet<Component>();
     private GameObject owner;
     private float damage = 10f;
     private float resourceValue = 20f;
@@ -27,14 +27,15 @@ public class MeleeAttack2D : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        EnemyDummy enemy = other.GetComponent<EnemyDummy>();
-        if (enemy == null || hitEnemies.Contains(enemy))
+        Component damageableComponent = other.GetComponent<Component>();
+        IDamageable damageable = other.GetComponent<IDamageable>();
+        if (damageable == null || damageableComponent == null || hitTargets.Contains(damageableComponent))
         {
             return;
         }
 
-        hitEnemies.Add(enemy);
-        enemy.TakeDamage(damage);
+        hitTargets.Add(damageableComponent);
+        damageable.TakeDamage(damage);
         GameAudio.PlaySfx("knifeHit", transform.position, 0.9f);
 
         PlayerStats playerStats = owner != null ? owner.GetComponent<PlayerStats>() : null;

@@ -20,6 +20,7 @@ public class PlayerStats : MonoBehaviour
     private bool isDead;
     private bool isBlocking;
     private bool wasBlocking;
+    private PlayerActionCounter actionCounter;
 
     public float Health => health;
     public float Mana => mana;
@@ -35,6 +36,7 @@ public class PlayerStats : MonoBehaviour
     {
         health = maxHealth;
         mana = maxMana;
+        actionCounter = GetComponent<PlayerActionCounter>();
     }
 
     private void Update()
@@ -55,6 +57,7 @@ public class PlayerStats : MonoBehaviour
         {
             parryWindowEndTime = Time.time + parryWindowDuration;
             nextParryReadyTime = Time.time + parryCooldown;
+            RecordAction("block_parry_attempt");
         }
 
         wasBlocking = isBlocking;
@@ -152,5 +155,18 @@ public class PlayerStats : MonoBehaviour
     public float ConvertManaDebtToHealth(float manaDebt)
     {
         return Mathf.Ceil(Mathf.Max(0f, manaDebt) / healthValueInMana);
+    }
+
+    private void RecordAction(string actionName)
+    {
+        if (actionCounter == null)
+        {
+            actionCounter = GetComponent<PlayerActionCounter>();
+        }
+
+        if (actionCounter != null)
+        {
+            actionCounter.Record(actionName);
+        }
     }
 }
