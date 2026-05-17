@@ -4,6 +4,11 @@ public class GameHud : MonoBehaviour
 {
     [SerializeField] private PlayerStats playerStats;
     private PlayerCombat playerCombat;
+    private Texture2D healthUiTexture;
+    private float lastHealth = -1f;
+    private float flashHealth;
+    private float healthFlashTimer;
+    private const float HealthFlashDuration = 0.75f;
 
     public void SetPlayerStats(PlayerStats stats)
     {
@@ -32,18 +37,13 @@ public class GameHud : MonoBehaviour
             }
         }
 
-        GUIStyle labelStyle = new GUIStyle(GUI.skin.label)
-        {
-            fontSize = 16,
-            font = MenuUI.GameFont,
-            normal = { textColor = Color.white }
-        };
-
         float hudAlpha = PauseMenu.IsPaused ? 0.3f : 1f;
+        UpdateHealthFlash();
 
-        DrawBar(new Rect(50f, 40f, 350f, 48f), playerStats.Health / playerStats.MaxHealth, Color.red, hudAlpha);
-        DrawBar(new Rect(50f, 100f, 350f, 48f), playerStats.Mana / playerStats.MaxMana, Color.blue, hudAlpha);
-        DrawEquippedSpell(new Rect(430f, 48f, 72f, 72f), hudAlpha);
+        DrawResourceBar(new Rect(92f, 38f, 350f, 48f), playerStats.Health / playerStats.MaxHealth, Color.red, hudAlpha, 0);
+        DrawHealthLossFlash(new Rect(92f, 38f, 350f, 48f), hudAlpha);
+        DrawResourceBar(new Rect(92f, 112f, 350f, 48f), playerStats.Mana / playerStats.MaxMana, Color.blue, hudAlpha, 1);
+        DrawEquippedSpell(new Rect(472f, 56f, 72f, 72f), hudAlpha);
 
         if (playerStats.IsDead)
         {
@@ -69,6 +69,89 @@ public class GameHud : MonoBehaviour
         GUI.DrawTexture(new Rect(rect.x + 2f, rect.y + 2f, (rect.width - 4f) * Mathf.Clamp01(percent), rect.height - 4f), Texture2D.whiteTexture);
 
         GUI.color = Color.white;
+    }
+
+    private void DrawResourceBar(Rect rect, float percent, Color fillColor, float alpha, int iconIndex)
+    {
+        EnsureHealthUiTexture();
+        if (healthUiTexture != null)
+        {
+            Rect iconRect = new Rect(rect.x - 58f, rect.y - 4f, 52f, 52f);
+            GUI.color = new Color(1f, 1f, 1f, alpha);
+            GUI.DrawTextureWithTexCoords(iconRect, healthUiTexture, GetHealthIconTexCoords(iconIndex));
+        }
+
+        DrawBar(rect, percent, fillColor, alpha);
+    }
+
+    private void DrawHealthLossFlash(Rect rect, float alpha)
+    {
+        if (healthFlashTimer <= 0f || playerStats == null || playerStats.MaxHealth <= 0f)
+        {
+            return;
+        }
+
+        float currentPercent = Mathf.Clamp01(playerStats.Health / playerStats.MaxHealth);
+        float flashPercent = Mathf.Clamp01(flashHealth / playerStats.MaxHealth);
+        if (flashPercent <= currentPercent)
+        {
+            return;
+        }
+
+        float fade = Mathf.Clamp01(healthFlashTimer / HealthFlashDuration);
+        float x = rect.x + 2f + (rect.width - 4f) * currentPercent;
+        float width = (rect.width - 4f) * (flashPercent - currentPercent);
+        GUI.color = new Color(1f, 1f, 1f, alpha * fade);
+        GUI.DrawTexture(new Rect(x, rect.y + 2f, width, rect.height - 4f), Texture2D.whiteTexture);
+        GUI.color = Color.white;
+    }
+
+    private void UpdateHealthFlash()
+    {
+        if (playerStats == null)
+        {
+            return;
+        }
+
+        if (lastHealth < 0f)
+        {
+            lastHealth = playerStats.Health;
+            flashHealth = playerStats.Health;
+            return;
+        }
+
+        if (playerStats.Health < lastHealth)
+        {
+            flashHealth = lastHealth;
+            healthFlashTimer = HealthFlashDuration;
+        }
+        else if (playerStats.Health > lastHealth)
+        {
+            flashHealth = playerStats.Health;
+        }
+
+        lastHealth = playerStats.Health;
+        if (healthFlashTimer > 0f)
+        {
+            healthFlashTimer = Mathf.Max(0f, healthFlashTimer - Time.unscaledDeltaTime);
+            flashHealth = Mathf.Lerp(playerStats.Health, flashHealth, healthFlashTimer / HealthFlashDuration);
+        }
+    }
+
+    private void EnsureHealthUiTexture()
+    {
+        if (healthUiTexture == null)
+        {
+            healthUiTexture = Resources.Load<Texture2D>("UI/HealthBarUI");
+        }
+    }
+
+    private static Rect GetHealthIconTexCoords(int iconIndex)
+    {
+        const float iconCount = 3f;
+        float width = 1f / iconCount;
+        int clamped = Mathf.Clamp(iconIndex, 0, 2);
+        return new Rect(width * clamped, 0f, width, 1f);
     }
 
     private void DrawEquippedSpell(Rect rect, float alpha)

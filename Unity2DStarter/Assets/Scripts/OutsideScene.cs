@@ -100,11 +100,6 @@ public class OutsideScene : MonoBehaviour
 
     private void BuildDaylight()
     {
-        GameObject lightObj = new GameObject("Daylight Global Light");
-
-        Light2D light = lightObj.AddComponent<Light2D>();
-        light.lightType = Light2D.LightType.Global;
-        light.color = Color.white;
-        light.intensity = 1f;
+        SceneLighting.ReplaceGlobalLight("Daylight Global Light", Color.white, 1f);
     }
 }

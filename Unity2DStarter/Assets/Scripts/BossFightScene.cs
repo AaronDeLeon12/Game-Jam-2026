@@ -19,6 +19,7 @@ public class BossFightScene : MonoBehaviour
         BuildDaylight();
 
         SystemsBootstrap.EnsureExists();
+        GameAudio.PlayMusic("BossFight1", 0.5f);
 
         Camera cam = SystemsBootstrap.Instance != null && SystemsBootstrap.Instance.GameCamera != null
             ? SystemsBootstrap.Instance.GameCamera
@@ -74,10 +75,6 @@ public class BossFightScene : MonoBehaviour
 
     private void BuildDaylight()
     {
-        GameObject lightObj = new GameObject("Daylight Global Light");
-        Light2D light = lightObj.AddComponent<Light2D>();
-        light.lightType = Light2D.LightType.Global;
-        light.color = Color.white;
-        light.intensity = 1f;
+        SceneLighting.ReplaceGlobalLight("Boss Fight Global Light", Color.white, 1f);
     }
 }

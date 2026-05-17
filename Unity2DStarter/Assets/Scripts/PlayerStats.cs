@@ -94,8 +94,7 @@ public class PlayerStats : MonoBehaviour
 
         if (health <= 0f)
         {
-            isDead = true;
-            RecordGameOver();
+            Die();
         }
     }
 
@@ -112,8 +111,7 @@ public class PlayerStats : MonoBehaviour
 
         if (health <= 0f)
         {
-            isDead = true;
-            RecordGameOver();
+            Die();
         }
     }
 
@@ -141,8 +139,7 @@ public class PlayerStats : MonoBehaviour
 
         if (health <= 0f)
         {
-            isDead = true;
-            RecordGameOver();
+            Die();
         }
 
         return true;
@@ -221,5 +218,22 @@ public class PlayerStats : MonoBehaviour
         recordedGameOver = true;
         SessionStats.Record("game_over");
         RecordAction("game_over");
+    }
+
+    private void Die()
+    {
+        if (isDead)
+        {
+            return;
+        }
+
+        isDead = true;
+        PlayerSpriteAnimator animator = GetComponent<PlayerSpriteAnimator>();
+        if (animator != null)
+        {
+            animator.PlayDeath();
+        }
+
+        RecordGameOver();
     }
 }

@@ -63,12 +63,7 @@ public class HomeScene : MonoBehaviour
     // light already exists.
     private void BuildFlatLight()
     {
-        GameObject lightObj = new GameObject("Home Flat Light");
-
-        Light2D light = lightObj.AddComponent<Light2D>();
-        light.lightType = Light2D.LightType.Global;
-        light.color = Color.white;
-        light.intensity = 1f;
+        SceneLighting.ReplaceGlobalLight("Home Flat Light", Color.white, 1f);
     }
 
     private void OnDestroy()

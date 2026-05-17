@@ -297,20 +297,6 @@ public class SurvivalTestingScene : MonoBehaviour
 
     private static void BuildFlatLight()
     {
-        foreach (Light2D existing in FindObjectsByType<Light2D>(FindObjectsSortMode.None))
-        {
-            if (existing.lightType == Light2D.LightType.Global)
-            {
-                existing.color = Color.white;
-                existing.intensity = 0.85f;
-                return;
-            }
-        }
-
-        GameObject lightObj = new GameObject("Survival Flat Light");
-        Light2D light = lightObj.AddComponent<Light2D>();
-        light.lightType = Light2D.LightType.Global;
-        light.color = Color.white;
-        light.intensity = 0.85f;
+        SceneLighting.ReplaceGlobalLight("Survival Flat Light", Color.white, 0.85f);
     }
 }

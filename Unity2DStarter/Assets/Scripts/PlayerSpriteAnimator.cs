@@ -22,6 +22,8 @@ public class PlayerSpriteAnimator : MonoBehaviour
     private readonly List<Sprite> crouchWalkFrames = new List<Sprite>();
     private readonly List<Sprite> teleportVanishFrames = new List<Sprite>();
     private readonly List<Sprite> teleportAppearFrames = new List<Sprite>();
+    private readonly List<Sprite> spellAttackFrames = new List<Sprite>();
+    private readonly List<Sprite> deathFrames = new List<Sprite>();
     private SpriteRenderer spriteRenderer;
     private Rigidbody2D body;
     private PlayerMovement2D movement;
@@ -35,6 +37,7 @@ public class PlayerSpriteAnimator : MonoBehaviour
     private float jumpStartFrameUntil;
     private bool crouchIntroPlaying;
     private bool isPlayingExternalAnimation;
+    private bool isDeadVisual;
     private int lastFacingDirection = 1;
     public bool HasLoadedSprites => walkFrames.Count > 0;
 
@@ -287,12 +290,16 @@ public class PlayerSpriteAnimator : MonoBehaviour
         crouchWalkFrames.Clear();
         teleportVanishFrames.Clear();
         teleportAppearFrames.Clear();
+        spellAttackFrames.Clear();
+        deathFrames.Clear();
 
         jumpFrames.AddRange(LoadSheetFrames("Player/States/NinaSaltando", JumpSheetFrameRects, "jump"));
         crouchFrames.AddRange(LoadSheetFrames("Player/States/NinaSeAgacha", CrouchSheetFrameRects, "crouch"));
         crouchWalkFrames.AddRange(LoadSheetFrames("Player/States/caminandoAgachada", CrouchWalkSheetFrameRects, "crouch_walk"));
         teleportVanishFrames.AddRange(LoadSheetFrames("Player/States/teleportCycle", TeleportVanishRects, "teleport_vanish"));
         teleportAppearFrames.AddRange(LoadSheetFrames("Player/States/teleportCycle", TeleportAppearRects, "teleport_appear"));
+        spellAttackFrames.AddRange(RuntimeSpriteCropper.LoadGridFrames("Player/States/spellAttackAnim", 4, 3, 320f, 10));
+        deathFrames.AddRange(RuntimeSpriteCropper.LoadGridFrames("Player/States/deathAnim", 4, 3, 320f, 10));
     }
 
     private void ApplyIdleFrame()
@@ -391,6 +398,28 @@ public class PlayerSpriteAnimator : MonoBehaviour
         yield return PlayExternalAnimation(teleportAppearFrames, duration);
     }
 
+    public void PlaySpellAttack(float duration = 0.28f)
+    {
+        if (spellAttackFrames.Count == 0 || isDeadVisual)
+        {
+            return;
+        }
+
+        StopCoroutine(nameof(PlayOneShotExternalAnimation));
+        StartCoroutine(PlayOneShotExternalAnimation(spellAttackFrames, duration));
+    }
+
+    public void PlayDeath(float duration = 0.7f)
+    {
+        if (deathFrames.Count == 0 || isDeadVisual)
+        {
+            return;
+        }
+
+        StopAllCoroutines();
+        StartCoroutine(PlayDeathAnimation(duration));
+    }
+
     private IEnumerator PlayExternalAnimation(List<Sprite> frames, float duration)
     {
         if (frames.Count == 0)
@@ -413,6 +442,42 @@ public class PlayerSpriteAnimator : MonoBehaviour
         }
 
         isPlayingExternalAnimation = false;
+    }
+
+    private IEnumerator PlayOneShotExternalAnimation(List<Sprite> frames, float duration)
+    {
+        if (frames.Count == 0)
+        {
+            yield break;
+        }
+
+        isPlayingExternalAnimation = true;
+        float frameDuration = duration / Mathf.Max(1, frames.Count);
+        for (int i = 0; i < frames.Count; i++)
+        {
+            ApplySprite(frames[i], true);
+            yield return new WaitForSeconds(frameDuration);
+        }
+
+        isPlayingExternalAnimation = false;
+        ForceRefresh();
+    }
+
+    private IEnumerator PlayDeathAnimation(float duration)
+    {
+        isDeadVisual = true;
+        isPlayingExternalAnimation = true;
+        float frameDuration = duration / Mathf.Max(1, deathFrames.Count);
+        for (int i = 0; i < deathFrames.Count; i++)
+        {
+            ApplySprite(deathFrames[i], true);
+            yield return new WaitForSeconds(frameDuration);
+        }
+
+        if (deathFrames.Count > 0)
+        {
+            ApplySprite(deathFrames[deathFrames.Count - 1], true);
+        }
     }
 
     private void ApplySprite(Sprite sprite, bool normalizeHeight = true, float relativeScaleMultiplier = 1f)

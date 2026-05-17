@@ -32,6 +32,7 @@ public class FlyingEnemyAI : MonoBehaviour
 
     private void Awake()
     {
+        SetupVisual();
         body = GetComponent<Rigidbody2D>();
         body.bodyType = RigidbodyType2D.Kinematic;
         body.gravityScale = 0f;
@@ -45,6 +46,24 @@ public class FlyingEnemyAI : MonoBehaviour
         {
             player = playerObject.transform;
         }
+    }
+
+    private void SetupVisual()
+    {
+        SpriteRenderer renderer = GetComponent<SpriteRenderer>();
+        if (renderer == null)
+        {
+            renderer = gameObject.AddComponent<SpriteRenderer>();
+        }
+
+        renderer.sortingOrder = 12;
+        ResourceSheetAnimator2D animator = GetComponent<ResourceSheetAnimator2D>();
+        if (animator == null)
+        {
+            animator = gameObject.AddComponent<ResourceSheetAnimator2D>();
+        }
+
+        animator.Configure("Enemies/evilFairy", 4, 3, 8f, true, 1, 256f, 10);
     }
 
     private void Update()

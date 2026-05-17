@@ -6,8 +6,20 @@ public class SaveVendor : MonoBehaviour, IInteractable
     [SerializeField] private string promptText = "Press E to save";
 
     private bool menuOpen;
+    private bool dialogueOpen;
+    private bool ownsModal;
+    private string dialogueLine;
+    private float dialogueInputReadyTime;
     private int pendingSlot;
     private float busyOverlayUntil;
+    private readonly string[] greetings =
+    {
+        "You can always start over... I think",
+        "Bet you could have used this before...",
+        "Hey you...",
+        "Again?",
+        "..."
+    };
 
     public string GetPromptText()
     {
@@ -17,7 +29,10 @@ public class SaveVendor : MonoBehaviour, IInteractable
     public void Interact()
     {
         SessionStats.Record("save_vendor_interactions");
-        menuOpen = true;
+        dialogueLine = greetings[Random.Range(0, greetings.Length)];
+        dialogueOpen = true;
+        ownsModal = true;
+        dialogueInputReadyTime = Time.realtimeSinceStartup + 0.15f;
         GameModal.Open();
         pendingSlot = 0;
     }
@@ -30,12 +45,14 @@ public class SaveVendor : MonoBehaviour, IInteractable
 
     private void OnGUI()
     {
-        if (!menuOpen && Time.realtimeSinceStartup > busyOverlayUntil)
+        if (!menuOpen && !dialogueOpen && Time.realtimeSinceStartup > busyOverlayUntil)
         {
-            if (GameModal.IsOpen)
+            if (ownsModal && GameModal.IsOpen)
             {
                 GameModal.Close();
             }
+
+            ownsModal = false;
 
             return;
         }
@@ -46,7 +63,53 @@ public class SaveVendor : MonoBehaviour, IInteractable
             return;
         }
 
+        if (dialogueOpen)
+        {
+            DrawVendorDialogue();
+            return;
+        }
+
         DrawSaveMenu();
+    }
+
+    private void DrawVendorDialogue()
+    {
+        GUI.color = new Color(0f, 0f, 0f, 0.35f);
+        GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Texture2D.whiteTexture);
+        GUI.color = Color.white;
+
+        Rect box = new Rect(Screen.width * 0.12f, Screen.height - 190f, Screen.width * 0.76f, 145f);
+        GUI.color = new Color(0.03f, 0.03f, 0.04f, 0.92f);
+        GUI.DrawTexture(box, Texture2D.whiteTexture);
+        GUI.color = Color.white;
+        GUI.Label(new Rect(box.x + 24f, box.y + 18f, box.width - 48f, 70f), dialogueLine, MenuUI.MakeLabelStyle(36));
+        GUI.Label(new Rect(box.x + 24f, box.y + 88f, box.width - 48f, 40f), "Press E", MenuUI.MakeLabelStyle(24));
+
+        Event e = Event.current;
+        if (Time.realtimeSinceStartup < dialogueInputReadyTime)
+        {
+            return;
+        }
+
+        if (e != null
+            && e.type == EventType.KeyDown
+            && (e.keyCode == KeyCode.E || e.keyCode == KeyCode.Return || e.keyCode == KeyCode.Space))
+        {
+            OpenSaveMenuAfterDialogue();
+            e.Use();
+        }
+        else if (e != null && e.type == EventType.MouseDown)
+        {
+            OpenSaveMenuAfterDialogue();
+            e.Use();
+        }
+    }
+
+    private void OpenSaveMenuAfterDialogue()
+    {
+        dialogueOpen = false;
+        menuOpen = true;
+        pendingSlot = 0;
     }
 
     private void DrawSaveMenu()
@@ -139,6 +202,7 @@ public class SaveVendor : MonoBehaviour, IInteractable
         SessionStats.Record("saves_made");
         SaveSystem.WriteSlot(slot);
         menuOpen = false;
+        dialogueOpen = false;
         pendingSlot = 0;
         busyOverlayUntil = Time.realtimeSinceStartup + 1.15f;
     }
@@ -146,7 +210,12 @@ public class SaveVendor : MonoBehaviour, IInteractable
     private void CloseMenu()
     {
         menuOpen = false;
-        GameModal.Close();
+        dialogueOpen = false;
+        if (ownsModal)
+        {
+            ownsModal = false;
+            GameModal.Close();
+        }
     }
 
     private void DrawBusyOverlay()
@@ -159,7 +228,7 @@ public class SaveVendor : MonoBehaviour, IInteractable
         GUI.Label(
             new Rect(0f, 0f, Screen.width, Screen.height),
             "Saving...\nDo not turn off or quit while saving.",
-            MenuUI.MakeLabelStyle(42) 
+            MenuUI.MakeLabelStyle(42)
         );
     }
 }

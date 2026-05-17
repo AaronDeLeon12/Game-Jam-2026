@@ -30,6 +30,7 @@ public class PlayerCombat : MonoBehaviour
     private PlayerStats stats;
     private PlayerActionCounter actionCounter;
     private SpriteRenderer playerVisualRenderer;
+    private PlayerSpriteAnimator spriteAnimator;
     private float nextCastTime;
     private float lastCooldownDuration = 1f;
     private float triangleChargeStartTime;
@@ -48,6 +49,7 @@ public class PlayerCombat : MonoBehaviour
         stats = GetComponent<PlayerStats>();
         actionCounter = GetComponent<PlayerActionCounter>();
         playerVisualRenderer = GetComponentInChildren<SpriteRenderer>();
+        spriteAnimator = GetComponent<PlayerSpriteAnimator>();
     }
 
     private void Update()
@@ -270,6 +272,16 @@ public class PlayerCombat : MonoBehaviour
 
     private void CastProjectile(SpellType spellType, float chargePercent)
     {
+        if (spellType == SpellType.Square || spellType == SpellType.Triangle)
+        {
+            if (spriteAnimator == null)
+            {
+                spriteAnimator = GetComponent<PlayerSpriteAnimator>();
+            }
+
+            spriteAnimator?.PlaySpellAttack();
+        }
+
         int direction = movement != null ? movement.FacingDirection : 1;
         Vector3 spawnPosition = transform.position + new Vector3(direction * 0.75f, 0f, 0f);
 

@@ -202,6 +202,8 @@ public class FinalBoss : MonoBehaviour, IDamageable
 
     private void SpawnProjectile()
     {
+        GameAudio.PlaySfx("bossShotSFX", transform.position, 0.9f);
+
         // Main arced shot.
         LaunchOne(player.position, projectileFlightTime, projectileGravityScale);
 
