@@ -32,3 +32,8 @@ Unity2DStarter/Assets/_Recovery.meta
 Thumbs.db
 .vs/
 .vscode/
+
+# Local campaign migration workspace and recoverable pre-migration asset backups
+/.authoring/
+/UnityAuthoringWork/
+/Unity2DStarter/ProjectArchive/

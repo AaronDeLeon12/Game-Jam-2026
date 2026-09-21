@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4b7d0550f26346adb749377db6154e64, type: 3}
+  m_Name: Square
+  m_EditorClassIdentifier: Assembly-CSharp::SpellDefinition
+  spellType: 0
+  displayName: Square
+  manaCost: 20
+  cooldown: 0.8
+  damage: 33.4
+  reach: 3.5
+  chargeTimeForFullPower: 0
+  overchargeDamageTime: 4
+  hudIcon: {fileID: 21300000, guid: dc737a57ce2bf35488874315a7cb089f, type: 3}
+  projectilePrefab: {fileID: 4474283961438349430, guid: 5fece1cf8f6de854994dd93d0c48522b, type: 3}
+  effectPrefab: {fileID: 0}
+  castSound: {fileID: 0}

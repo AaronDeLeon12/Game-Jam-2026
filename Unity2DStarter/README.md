@@ -1,43 +1,43 @@
-# Unity2DStarter
+# Tales of Ivory Moss
 
-A small Unity 2D starter project for learning top-down player movement.
+Unity 2D action-adventure project built around editor-authored scenes, reusable prefabs, Animator assets, and Inspector-driven tuning.
 
-## What opens first
+## Start here
 
-When you open this folder in Unity, the editor script in `Assets/Editor/StarterSceneBuilder.cs` automatically creates:
+Open `Assets/Scenes/Menu/MainMenu.unity` to run the normal game flow. Campaign scenes are in `Assets/Scenes/Campaign`; Wrath Mode is in `Assets/Scenes/Modes`; the larger hand-built world begins in `Assets/Scenes/World/World1.unity`.
 
-- `Assets/Scenes/StarterScene.unity`
-- a blue `Player` object
-- a dark `Play Area`
-- a `Main Camera` that follows the player
-- keyboard movement using WASD or arrow keys
+## Main project folders
 
-## How to play
+- `Assets/Scenes`: scenes grouped into Menu, Campaign, Modes, and World.
+- `Assets/Prefabs`: reusable Characters, Enemies, Environment, Interactables, Projectiles, UI, and VFX.
+- `Assets/Scripts`: runtime code grouped by responsibility.
+- `Assets/Animations`: Animator Controllers and animation clips.
+- `Assets/Art`: imported and authored visual assets.
+- `Assets/Resources`: assets intentionally loaded by resource path at runtime.
+- `Assets/Editor`: build and authoring utilities only.
 
-1. Open Unity Hub.
-2. Choose `Add` or `Open`.
-3. Select this folder: `Unity2DStarter`.
-4. Wait for Unity to import packages.
-5. Open `Assets/Scenes/StarterScene.unity` if it is not already open.
-6. Press the Play button.
-7. Move left/right with A/D or arrow keys.
-8. Jump with Space.
-9. Cast a short spell projectile with right click.
+## GameplayRig
 
-## Main files
+`Assets/Resources/Prefabs/GameplayRig.prefab` is the persistent gameplay foundation. Campaign scenes contain one instance, and it survives scene changes so the same player state continues between rooms.
 
-- `Assets/Scripts/PlayerMovement2D.cs`: player movement.
-- `Assets/Scripts/CameraFollow2D.cs`: smooth camera follow.
-- `Assets/Scripts/PlayerStats.cs`: health, mana, spell cost, and mana regeneration.
-- `Assets/Scripts/PlayerCombat.cs`: right-click spell casting.
-- `Assets/Scripts/EnemyDummy.cs`: three-hit respawning dummy enemy.
-- `Assets/Scripts/GameHud.cs`: placeholder HP, mana, and game-over overlay.
-- `Assets/Scripts/GameTemplateBootstrap.cs`: keeps the scene wired as the gameplay template.
-- `Assets/Editor/StarterSceneBuilder.cs`: creates the starter scene.
+It contains:
 
-## Art folders
+- `Player`: movement, combat, health/mana, interaction, colliders, and animation.
+- `Main Camera`: follows the persistent player and uses scene camera bounds.
+- `GameHUD`: health, mana, equipped spell, death menu, and load slots.
+- `GameplayMenus`: pause, settings, save/load, confirmation, dialogue, and interaction prompts.
+- `EventSystem`: sends keyboard and pointer input to Canvas controls.
+- Root controllers: bootstrap references, level transitions, and pause behavior.
 
-- `Assets/Art/Source`: editable art files.
-- `Assets/Art/Sprites`: exported character/object sprites.
-- `Assets/Art/Tiles`: tiles and tilesets.
-- `Assets/Art/Animations`: sprite sheets or animation frames.
+The rig belongs under `Resources/Prefabs` because `SystemsBootstrap` can load it by the stable path `Prefabs/GameplayRig` when a gameplay scene is opened directly. The editable player source prefab is under `Assets/Prefabs/Characters/Player.prefab`.
+
+Edit movement, dash, health, mana, and combat tuning on `Assets/Prefabs/Characters/Player.prefab`. The nested Player in `GameplayRig` inherits those values and has no separate gameplay tuning overrides. During Play Mode Unity moves the same rig into `DontDestroyOnLoad`; that runtime object is only a live preview, so permanent changes should be made on the Player prefab before entering Play Mode.
+
+## Editing rules
+
+- Place level geometry, NPCs, doors, enemies, and camera bounds directly in scenes.
+- Make reusable objects prefabs and tune their serialized values in the Inspector.
+- Keep runtime construction for Wrath Mode, temporary combat effects, and other genuinely dynamic objects.
+- Preserve scene names used by transitions even if scenes move between folders.
+
+See `CAMPAIGN_EDITING_GUIDE.md` for the detailed campaign workflow, `EDITOR_AUTHORING_WORKFLOW.md` for the project-wide authoring rules, and `EDITOR_AUTHORING_CHANGELOG.md` for the complete conversion and validation record.

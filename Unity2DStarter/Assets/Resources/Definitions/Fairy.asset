@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5226d1fed3c74021bf911f3b1fc9d429, type: 3}
+  m_Name: Fairy
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyDefinition
+  displayName: Fairy
+  maxHealth: 50
+  moveSpeed: 17.5
+  contactDamage: 10
+  attackDamage: 10
+  attackRange: 6
+  attackCooldown: 2.2
+  enemyPrefab: {fileID: 3220590121165968906, guid: 17774515d5ff40f47b8e94d04631f140, type: 3}
+  projectilePrefab: {fileID: 0}
+  attackSound: {fileID: 0}
+  hitSound: {fileID: 0}
+  deathSound: {fileID: 0}

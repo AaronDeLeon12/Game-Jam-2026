@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5226d1fed3c74021bf911f3b1fc9d429, type: 3}
+  m_Name: FinalBoss
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyDefinition
+  displayName: FinalBoss
+  maxHealth: 3000
+  moveSpeed: 3
+  contactDamage: 10
+  attackDamage: 30
+  attackRange: 3
+  attackCooldown: 1.2
+  enemyPrefab: {fileID: 7513060160147937172, guid: 2bb4d9dcacf9b414abdfa3002a818c39, type: 3}
+  projectilePrefab: {fileID: 8421213823855000290, guid: 79253fa58f6c4ed4f882231c1359ffdf, type: 3}
+  attackSound: {fileID: 0}
+  hitSound: {fileID: 0}
+  deathSound: {fileID: 0}

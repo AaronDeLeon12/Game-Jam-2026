@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc8d090174a3902429a956b72c3143d8, type: 3}
+  m_Name: PlayerVitals
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerVitalsDefinition
+  maxHealth: 100
+  maxMana: 100
+  spellManaCost: 20
+  manaRegenDelay: 3
+  manaRegenPerSecond: 20
+  healthValueInMana: 2
+  parryWindowDuration: 0.2
+  parryCooldown: 1
+  parryHealthRestore: 10
